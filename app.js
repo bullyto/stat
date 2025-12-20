@@ -1,156 +1,83 @@
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
 
-/* Stats ADN66 — PWA front
-   Campagnes: apero / catalan / chance / jeux
-   API: https://stats.aperos.net/api/stats
-*/
-const API_STATS = "https://stats.aperos.net/api/stats";
-const API_LINKS = "https://stats.aperos.net/api/links"; // optional (si le worker le fournit)
+    // ===== HEADERS CORS =====
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
 
-const $ = (id) => document.getElementById(id);
-
-function setStatus(msg, isErr=false){
-  const el = $("status");
-  el.textContent = msg || "";
-  el.classList.toggle("err", !!isErr);
-}
-
-function formatInt(n){
-  if (typeof n !== "number") return "—";
-  return new Intl.NumberFormat("fr-FR").format(n);
-}
-
-function campaignLabel(key){
-  const map = {
-    apero: "Apéro",
-    catalan: "Catalan",
-    chance: "Chance",
-    jeux: "Jeux",
-  };
-  return map[key] || key;
-}
-
-function buildGoLink(campaign, to){
-  const u = new URL(`https://stats.aperos.net/go/${encodeURIComponent(campaign)}`);
-  u.searchParams.set("to", to);
-  return u.toString();
-}
-
-function defaultDestinations(){
-  // Tu peux modifier ici si besoin (mais c'est déjà propre)
-  return {
-    apero: "https://aperos.net",
-    catalan: "https://catalan.aperos.net",
-    chance: "https://chance.aperos.net",
-    jeux: "https://game.aperos.net",
-  };
-}
-
-async function fetchJson(url){
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.json();
-}
-
-async function refresh(){
-  setStatus("Chargement des stats…");
-  try{
-    const data = await fetchJson(API_STATS);
-
-    $("kpiTotal").textContent = formatInt(data.total);
-    $("kpiToday").textContent = formatInt(data.today);
-
-    const c = data.campaigns || {};
-    $("cApero").textContent = formatInt(c.apero ?? 0);
-    $("cCatalan").textContent = formatInt(c.catalan ?? 0);
-    $("cChance").textContent = formatInt(c.chance ?? 0);
-    $("cJeux").textContent = formatInt(c.jeux ?? 0);
-
-    // Table
-    const tbody = $("tbody");
-    tbody.innerHTML = "";
-
-    const dest = defaultDestinations();
-    const rows = ["apero","catalan","chance","jeux"]
-      .map(k => ({ key: k, clicks: Number(c[k] ?? 0), to: dest[k] }))
-      .sort((a,b) => b.clicks - a.clicks);
-
-    for (const r of rows){
-      const tr = document.createElement("tr");
-
-      const td1 = document.createElement("td");
-      td1.textContent = campaignLabel(r.key);
-
-      const td2 = document.createElement("td");
-      td2.textContent = formatInt(r.clicks);
-
-      const td3 = document.createElement("td");
-      const go = buildGoLink(r.key, r.to);
-      td3.innerHTML = `<a href="${go}" target="_blank" rel="noopener">Lien tracking</a>
-        <span class="muted"> • </span>
-        <a href="${r.to}" target="_blank" rel="noopener">Destination</a>`;
-
-      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
-      tbody.appendChild(tr);
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
     }
 
-    setStatus("OK • stats à jour ✅");
-  }catch(err){
-    console.error(err);
-    setStatus("Erreur : API non accessible (Worker / DNS / CORS).", true);
-  }
-}
+    // ===== HEALTH CHECK =====
+    if (url.pathname === "/api/health") {
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "content-type": "application/json" },
+      });
+    }
 
-async function copyLinks(){
-  const dest = defaultDestinations();
-  const lines = [
-    `Apéro : ${buildGoLink("apero", dest.apero)}`,
-    `Catalan : ${buildGoLink("catalan", dest.catalan)}`,
-    `Chance : ${buildGoLink("chance", dest.chance)}`,
-    `Jeux : ${buildGoLink("jeux", dest.jeux)}`,
-  ];
-  const txt = lines.join("\n");
-  try{
-    await navigator.clipboard.writeText(txt);
-    setStatus("Liens copiés ✅ (tu peux coller dans tes notes / SMS / FB)");
-  }catch{
-    // fallback
-    const ta = document.createElement("textarea");
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    ta.remove();
-    setStatus("Liens copiés ✅");
-  }
-}
+    // ===== STATS API =====
+    if (url.pathname === "/api/stats") {
+      const pass = url.searchParams.get("pass");
+      if (pass !== "0000") {
+        return new Response(JSON.stringify({ error: "unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "content-type": "application/json" },
+        });
+      }
 
-function setupPWAInstall(){
-  let deferredPrompt = null;
-  const btn = $("btnInstall");
+      const total = await env.DB
+        .prepare("SELECT COUNT(*) as c FROM clicks")
+        .first();
 
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    btn.hidden = false;
-  });
+      const today = await env.DB
+        .prepare(
+          "SELECT COUNT(*) as c FROM clicks WHERE date(created_at)=date('now')"
+        )
+        .first();
 
-  btn.addEventListener("click", async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    btn.hidden = true;
-  });
+      const campaigns = {};
+      const rows = await env.DB
+        .prepare(
+          "SELECT campaign, COUNT(*) as c FROM clicks GROUP BY campaign"
+        )
+        .all();
 
-  // Service Worker
-  if ("serviceWorker" in navigator){
-    navigator.serviceWorker.register("./service-worker.js").catch(console.error);
-  }
-}
+      for (const r of rows.results) {
+        campaigns[r.campaign] = r.c;
+      }
 
-document.addEventListener("DOMContentLoaded", () => {
-  $("btnRefresh").addEventListener("click", refresh);
-  $("btnCopyLinks").addEventListener("click", copyLinks);
-  setupPWAInstall();
-  refresh();
-});
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          total: total.c,
+          today: today.c,
+          campaigns,
+        }),
+        { headers: { ...corsHeaders, "content-type": "application/json" } }
+      );
+    }
+
+    // ===== TRACKING & REDIRECT =====
+    if (url.pathname.startsWith("/go/")) {
+      const campaign = url.pathname.split("/")[2];
+
+      if (!campaign) {
+        return new Response("Campaign missing", { status: 400 });
+      }
+
+      await env.DB.prepare(
+        "INSERT INTO clicks (campaign) VALUES (?)"
+      ).bind(campaign).run();
+
+      const target = `https://${campaign}.aperos.net`;
+      return Response.redirect(target, 302);
+    }
+
+    return new Response("OK", { headers: corsHeaders });
+  },
+};
