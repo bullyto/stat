@@ -39,7 +39,7 @@ function defaultDestinations(){
   // Tu peux modifier ici si besoin (mais c'est déjà propre)
   return {
     apero: "https://aperos.net",
-    catalan: "https://aperos.net/catalan",
+    catalan: "https://catalan.aperos.net",
     chance: "https://chance.aperos.net",
     jeux: "https://game.aperos.net",
   };
