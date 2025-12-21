@@ -1,327 +1,376 @@
-/* Stats ADN66 — PWA front
-   Campagnes: apero / catalan / chance / jeux
-   API: https://stats.aperos.net/api/stats
-   Tracking: https://stats.aperos.net/go/<campaign>?src=XXX
+/* Stats ADN66 - app.js (frontend)
+   - Affiche: total, aujourd'hui
+   - Détails: campagnes, sources, appareils, OS, navigateurs, pays
+   - Optionnel si dispo côté API: clics par heure, derniers clics
 */
 
-const API_STATS = "https://stats.aperos.net/api/stats";
-const TRACK_BASE = "https://stats.aperos.net/go";
+(() => {
+  "use strict";
 
-const $ = (id) => document.getElementById(id);
+  // ========= CONFIG =========
+  const CAMPAIGNS = [
+    { key: "apero", label: "Apéro" },
+    { key: "catalan", label: "Catalan" },
+    { key: "chance", label: "Chance" },
+    { key: "jeux", label: "Jeux" },
+  ];
 
-function setStatus(msg, isErr = false) {
-  const el = $("status");
-  if (!el) return;
-  el.textContent = msg || "";
-  el.classList.toggle("err", !!isErr);
-}
+  // Liste "source" proposée (tu peux en ajouter)
+  const SOURCES = [
+    { key: "direct", label: "Direct" },
+    { key: "sms", label: "SMS" },
+    { key: "facebook", label: "Facebook" },
+    { key: "messenger",label: "Messenger" },
+    { key: "insta", label: "Instagram" },
+    { key: "snap", label: "Snap" },
+    { key: "flyer", label: "Flyer" },
+    { key: "qr", label: "QR" },
+  ];
 
-function formatInt(n) {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return "—";
-  return new Intl.NumberFormat("fr-FR").format(v);
-}
+  // API: même domaine
+  const API_STATS = "/api/stats";
+  const API_HEALTH = "/api/health";
 
-function campaignLabel(key) {
-  const map = { apero: "Apéro", catalan: "Catalan", chance: "Chance", jeux: "Jeux" };
-  return map[key] || key;
-}
+  // ========= HELPERS =========
+  const $ = (id) => document.getElementById(id);
 
-function defaultDestinations() {
-  // ✅ tes vraies destinations
-  return {
-    apero: "https://aperos.net",
-    catalan: "https://catalan.aperos.net",
-    chance: "https://chance.aperos.net",
-    jeux: "https://game.aperos.net",
-  };
-}
-
-// ✅ Worker: /go/<campaign>?src=QR (ou SMS/FB/etc)
-function buildGoLink(campaign, src = "direct") {
-  const u = new URL(`${TRACK_BASE}/${encodeURIComponent(campaign)}`);
-  if (src) u.searchParams.set("src", src);
-  return u.toString();
-}
-
-async function fetchJson(url) {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.json();
-}
-
-/* ---------- Helpers pour parser les résultats D1 ---------- */
-
-function pick(obj, keys, fallback = null) {
-  for (const k of keys) {
-    if (obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
+  function safeText(v) {
+    if (v === null || v === undefined) return "?";
+    const s = String(v).trim();
+    return s.length ? s : "?";
   }
-  return fallback;
-}
 
-function toMapFromArray(arr, keyCandidates, valueCandidates) {
-  // arr = [{campaign:'jeux', n:10}, ...] ou [{pays:'FR', n:16}, ...]
-  const map = {};
-  if (!Array.isArray(arr)) return map;
-  for (const row of arr) {
-    const k = String(pick(row, keyCandidates, "") || "").trim();
-    const v = Number(pick(row, valueCandidates, 0) || 0);
-    if (!k) continue;
-    map[k] = (map[k] || 0) + (Number.isFinite(v) ? v : 0);
+  function n(v) {
+    const x = Number(v);
+    return Number.isFinite(x) ? x : 0;
   }
-  return map;
-}
 
-function sortEntriesDesc(map) {
-  return Object.entries(map).sort((a, b) => (b[1] || 0) - (a[1] || 0));
-}
-
-function ensureExtraContainer() {
-  let host = $("extra");
-  if (host) return host;
-
-  // fallback: on insère après la table si possible, sinon fin du body
-  const table = document.querySelector("table");
-  host = document.createElement("div");
-  host.id = "extra";
-  host.style.marginTop = "16px";
-
-  if (table && table.parentElement) {
-    table.parentElement.appendChild(host);
-  } else {
-    document.body.appendChild(host);
+  function setStatus(msg, ok = true) {
+    const el = $("status");
+    if (!el) return;
+    el.textContent = msg;
+    el.dataset.ok = ok ? "1" : "0";
   }
-  return host;
-}
 
-function renderMiniTable(host, title, entries, opts = {}) {
-  const { max = 8, emptyLabel = "—" } = opts;
+  function fmtDateLocal(isoLike) {
+    // created_at peut être "YYYY-MM-DD HH:MM:SS" (sqlite) ou ISO
+    if (!isoLike) return "";
+    const s = String(isoLike);
 
-  const card = document.createElement("div");
-  card.className = "card";
-  card.style.marginTop = "12px";
-  card.innerHTML = `
-    <div class="cardTitle">${title}</div>
-    <div class="miniTableWrap">
-      <table class="miniTable">
+    // essaie ISO direct
+    let d = new Date(s);
+    if (!isNaN(d.getTime())) return d.toLocaleString();
+
+    // essaie "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SS"
+    const s2 = s.replace(" ", "T");
+    d = new Date(s2);
+    if (!isNaN(d.getTime())) return d.toLocaleString();
+
+    return s;
+  }
+
+  function renderPairs(containerId, title, rows, keyField, valueField) {
+    const root = $(containerId);
+    if (!root) return;
+
+    // Structure attendue:
+    // <div id="xxx">
+    // <div class="mini-title">...</div> (optionnel)
+    // <div class="rows"></div> (optionnel)
+    // </div>
+
+    const titleEl = root.querySelector("[data-title]") || root.querySelector(".mini-title");
+    if (titleEl && title) titleEl.textContent = title;
+
+    const list = root.querySelector("[data-rows]") || root;
+    list.innerHTML = "";
+
+    if (!rows || !rows.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "—";
+      list.appendChild(empty);
+      return;
+    }
+
+    const table = document.createElement("table");
+    table.className = "mini-table";
+
+    const thead = document.createElement("thead");
+    thead.innerHTML = `<tr><th>${safeText(keyField)}</th><th>${safeText(valueField)}</th></tr>`;
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    for (const r of rows) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(safeText(r[keyField]))}</td>
+        <td>${escapeHtml(String(n(r[valueField])))}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    list.appendChild(table);
+  }
+
+  function renderCampaignCards(byCampaign) {
+    // Affichage “cards” si tu as des IDs dédiés (sinon ça ne casse pas)
+    // Ex: <span id="camp_apero">0</span> etc.
+    if (!byCampaign || !byCampaign.length) return;
+
+    const map = new Map();
+    for (const r of byCampaign) map.set(String(r.campaign || "").toLowerCase(), n(r.n));
+
+    for (const c of CAMPAIGNS) {
+      const el = $(`camp_${c.key}`);
+      if (el) el.textContent = String(map.get(c.key) ?? 0);
+    }
+
+    // tableau “Détails par campagne” si existe
+    const tableWrap = $("tableCampaign");
+    if (tableWrap) {
+      tableWrap.innerHTML = "";
+      const table = document.createElement("table");
+      table.className = "big-table";
+      table.innerHTML = `
         <thead>
-          <tr>
-            <th>${title}</th>
-            <th style="text-align:right;">Clics</th>
-          </tr>
+          <tr><th>Campagne</th><th>Clics</th></tr>
         </thead>
         <tbody></tbody>
-      </table>
-    </div>
-  `;
-  const tbody = card.querySelector("tbody");
+      `;
+      const tbody = table.querySelector("tbody");
 
-  const sliced = (entries || []).slice(0, max);
-  if (!sliced.length) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${emptyLabel}</td><td style="text-align:right;">0</td>`;
-    tbody.appendChild(tr);
-  } else {
-    for (const [k, v] of sliced) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${escapeHtml(k)}</td><td style="text-align:right;">${formatInt(v)}</td>`;
-      tbody.appendChild(tr);
+      // tri décroissant
+      const sorted = [...byCampaign].sort((a,b) => n(b.n) - n(a.n));
+      for (const r of sorted) {
+        const key = safeText(r.campaign);
+        const label = CAMPAIGNS.find(x => x.key === String(key).toLowerCase())?.label || key;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${escapeHtml(label)}</td><td>${escapeHtml(String(n(r.n)))}</td>`;
+        tbody.appendChild(tr);
+      }
+      tableWrap.appendChild(table);
     }
   }
 
-  host.appendChild(card);
-}
+  function renderHourly(hourlyRows) {
+    // Attendu: [{hour:"00", n: 1}, ...]
+    const root = $("tableHourly");
+    if (!root) return;
 
-function escapeHtml(s) {
-  return String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+    root.innerHTML = "";
+    if (!hourlyRows || !hourlyRows.length) {
+      root.textContent = "—";
+      return;
+    }
 
-/* ---------- UI ---------- */
-
-function updateTopKPIs(data, campaignCounts) {
-  if ($("kpiTotal")) $("kpiTotal").textContent = formatInt(data.total);
-  if ($("kpiToday")) $("kpiToday").textContent = formatInt(data.today);
-
-  if ($("cApero")) $("cApero").textContent = formatInt(campaignCounts.apero || 0);
-  if ($("cCatalan")) $("cCatalan").textContent = formatInt(campaignCounts.catalan || 0);
-  if ($("cChance")) $("cChance").textContent = formatInt(campaignCounts.chance || 0);
-  if ($("cJeux")) $("cJeux").textContent = formatInt(campaignCounts.jeux || 0);
-}
-
-function renderMainTable(campaignCounts) {
-  const tbody = $("tbody");
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-
-  const dest = defaultDestinations();
-  const rows = ["apero", "catalan", "chance", "jeux"]
-    .map((k) => ({ key: k, clicks: Number(campaignCounts[k] ?? 0), to: dest[k] }))
-    .sort((a, b) => b.clicks - a.clicks);
-
-  for (const r of rows) {
-    const tr = document.createElement("tr");
-
-    const td1 = document.createElement("td");
-    td1.textContent = campaignLabel(r.key);
-
-    const td2 = document.createElement("td");
-    td2.textContent = formatInt(r.clicks);
-
-    const td3 = document.createElement("td");
-    // liens exemples: direct / QR / SMS / FB
-    const goDirect = buildGoLink(r.key, "direct");
-    const goQR = buildGoLink(r.key, "QR");
-    const goSMS = buildGoLink(r.key, "SMS");
-    const goFB = buildGoLink(r.key, "FB");
-
-    td3.innerHTML = `
-      <div class="linksLine">
-        <a href="${goDirect}" target="_blank" rel="noopener">Lien direct</a>
-        <span class="muted"> • </span>
-        <a href="${goQR}" target="_blank" rel="noopener">QR</a>
-        <span class="muted"> • </span>
-        <a href="${goSMS}" target="_blank" rel="noopener">SMS</a>
-        <span class="muted"> • </span>
-        <a href="${goFB}" target="_blank" rel="noopener">FB</a>
-      </div>
-      <div class="linksLine mutedSmall">
-        Destination : <a href="${r.to}" target="_blank" rel="noopener">${r.to}</a>
-      </div>
+    const table = document.createElement("table");
+    table.className = "big-table";
+    table.innerHTML = `
+      <thead><tr><th>Heure</th><th>Clics</th></tr></thead>
+      <tbody></tbody>
     `;
+    const tbody = table.querySelector("tbody");
 
-    tr.appendChild(td1);
-    tr.appendChild(td2);
-    tr.appendChild(td3);
-    tbody.appendChild(tr);
+    const sorted = [...hourlyRows].sort((a,b) => String(a.hour).localeCompare(String(b.hour)));
+    for (const r of sorted) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${escapeHtml(safeText(r.hour))}</td><td>${escapeHtml(String(n(r.n)))}</td>`;
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    root.appendChild(table);
   }
-}
 
-function renderExtraBreakdowns(data) {
-  const host = ensureExtraContainer();
-  host.innerHTML = ""; // reset
+  function renderLastClicks(lastRows) {
+    // Attendu: [{created_at,campaign,source,country,device,os,browser,referrer,domain,path}]
+    const root = $("tableLast");
+    if (!root) return;
 
-  // bySource (si tu l’as dans l’API)
-  const bySourceMap = toMapFromArray(
-    data.bySource,
-    ["source", "src"],
-    ["n", "count", "clicks"]
-  );
+    root.innerHTML = "";
+    if (!lastRows || !lastRows.length) {
+      root.textContent = "—";
+      return;
+    }
 
-  // byDevice : accepte device/appareil
-  const byDeviceMap = toMapFromArray(
-    data.byDevice,
-    ["device", "appareil"],
-    ["n", "count", "clicks"]
-  );
+    const table = document.createElement("table");
+    table.className = "big-table";
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Campagne</th>
+          <th>Source</th>
+          <th>Pays</th>
+          <th>Appareil</th>
+          <th>OS</th>
+          <th>Navigateur</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector("tbody");
 
-  // byOS
-  const byOSMap = toMapFromArray(
-    data.byOS,
-    ["os"],
-    ["n", "count", "clicks"]
-  );
+    for (const r of lastRows) {
+      const campKey = safeText(r.campaign).toLowerCase();
+      const campLabel = CAMPAIGNS.find(x => x.key === campKey)?.label || safeText(r.campaign);
 
-  // byBrowser : accepte browser/navigateur
-  const byBrowserMap = toMapFromArray(
-    data.byBrowser,
-    ["browser", "navigateur"],
-    ["n", "count", "clicks"]
-  );
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(fmtDateLocal(r.created_at))}</td>
+        <td>${escapeHtml(campLabel)}</td>
+        <td>${escapeHtml(safeText(r.source))}</td>
+        <td>${escapeHtml(safeText(r.country))}</td>
+        <td>${escapeHtml(safeText(r.device))}</td>
+        <td>${escapeHtml(safeText(r.os))}</td>
+        <td>${escapeHtml(safeText(r.browser))}</td>
+      `;
+      tbody.appendChild(tr);
+    }
 
-  // byCountry : accepte country/pays
-  const byCountryMap = toMapFromArray(
-    data.byCountry,
-    ["country", "pays"],
-    ["n", "count", "clicks"]
-  );
-
-  // Rendu (tri décroissant)
-  if (Object.keys(bySourceMap).length) {
-    renderMiniTable(host, "Sources", sortEntriesDesc(bySourceMap), { max: 10 });
+    table.appendChild(tbody);
+    root.appendChild(table);
   }
-  renderMiniTable(host, "Appareils", sortEntriesDesc(byDeviceMap), { max: 10 });
-  renderMiniTable(host, "OS", sortEntriesDesc(byOSMap), { max: 10 });
-  renderMiniTable(host, "Navigateurs", sortEntriesDesc(byBrowserMap), { max: 10 });
-  renderMiniTable(host, "Pays", sortEntriesDesc(byCountryMap), { max: 12 });
-}
 
-async function refresh() {
-  setStatus("Chargement des stats…");
-  try {
-    const data = await fetchJson(API_STATS);
-
-    // Campagnes: on reconstruit à partir de byCampaign (ton API actuelle)
-    const campaignCounts = toMapFromArray(
-      data.byCampaign,
-      ["campaign"],
-      ["n", "count", "clicks"]
-    );
-
-    // assure les 4 clés
-    const safeCampaigns = {
-      apero: Number(campaignCounts.apero || 0),
-      catalan: Number(campaignCounts.catalan || 0),
-      chance: Number(campaignCounts.chance || 0),
-      jeux: Number(campaignCounts.jeux || 0),
-    };
-
-    updateTopKPIs(data, safeCampaigns);
-    renderMainTable(safeCampaigns);
-    renderExtraBreakdowns(data);
-
-    setStatus("OK • stats à jour ✅");
-  } catch (err) {
-    console.error(err);
-    setStatus("Erreur : API non accessible (Worker / DNS / CORS).", true);
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
-}
 
-async function copyLinks() {
-  const dest = defaultDestinations();
-  const lines = [
-    `Apéro (QR) : ${buildGoLink("apero", "QR")} -> ${dest.apero}`,
-    `Catalan (QR) : ${buildGoLink("catalan", "QR")} -> ${dest.catalan}`,
-    `Chance (QR) : ${buildGoLink("chance", "QR")} -> ${dest.chance}`,
-    `Jeux (QR) : ${buildGoLink("jeux", "QR")} -> ${dest.jeux}`,
-    "",
-    `Apéro (SMS) : ${buildGoLink("apero", "SMS")}`,
-    `Catalan (SMS) : ${buildGoLink("catalan", "SMS")}`,
-    `Chance (SMS) : ${buildGoLink("chance", "SMS")}`,
-    `Jeux (SMS) : ${buildGoLink("jeux", "SMS")}`,
-    "",
-    `Apéro (FB) : ${buildGoLink("apero", "FB")}`,
-    `Catalan (FB) : ${buildGoLink("catalan", "FB")}`,
-    `Chance (FB) : ${buildGoLink("chance", "FB")}`,
-    `Jeux (FB) : ${buildGoLink("jeux", "FB")}`,
-  ];
-
-  const txt = lines.join("\n");
-  try {
-    await navigator.clipboard.writeText(txt);
-    setStatus("Liens copiés ✅ (tu peux coller dans tes notes / SMS / FB)");
-  } catch {
-    // fallback
-    const ta = document.createElement("textarea");
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    ta.remove();
-    setStatus("Liens copiés ✅");
+  // ========= LINKS =========
+  function buildGoLink(campaignKey, src) {
+    // relative (même domaine): /go/chance?src=QR
+    const u = new URL(location.origin + `/go/${campaignKey}`);
+    if (src) u.searchParams.set("src", src);
+    return u.toString();
   }
-}
 
-function setupPWAInstall() {
-  let deferredPrompt = null;
-  const btn = $("btnInstall");
+  function buildLinksText() {
+    // Format prêt à coller
+    // (Tu peux modifier les sources comme tu veux)
+    const lines = [];
 
-  if (btn) {
+    lines.push("=== ADN66 Tracking Links ===");
+    lines.push("");
+
+    for (const c of CAMPAIGNS) {
+      lines.push(`--- ${c.label} ---`);
+      lines.push(`Direct: ${buildGoLink(c.key)}`);
+      lines.push(`QR: ${buildGoLink(c.key, "QR")}`);
+      lines.push(`Flyer: ${buildGoLink(c.key, "flyer")}`);
+      lines.push(`SMS: ${buildGoLink(c.key, "sms")}`);
+      lines.push(`FB: ${buildGoLink(c.key, "facebook")}`);
+      lines.push("");
+    }
+
+    lines.push("Astuce: tu peux inventer une source: ?src=toto (ça s’affiche dans Origine).");
+    return lines.join("\n");
+  }
+
+  async function copyLinks() {
+    const text = buildLinksText();
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus("Liens copiés ✅", true);
+    } catch {
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      setStatus("Liens copiés ✅", true);
+    }
+  }
+
+  // ========= FETCH / RENDER =========
+  async function refresh() {
+    setStatus("Chargement…", true);
+
+    try {
+      // petit check health (optionnel)
+      await fetch(API_HEALTH, { cache: "no-store" }).catch(() => {});
+
+      const r = await fetch(API_STATS, { cache: "no-store" });
+      const data = await r.json();
+
+      if (!data?.ok) {
+        setStatus(`Erreur: ${safeText(data?.error)}`, false);
+        return;
+      }
+
+      // Totaux
+      if ($("total")) $("total").textContent = String(n(data.total));
+      if ($("today")) $("today").textContent = String(n(data.today));
+
+      // Campagnes
+      renderCampaignCards(data.byCampaign || []);
+
+      // Blocs simples (si tes IDs existent)
+      // NB: ton API renvoie des objets genre:
+      // byDevice: [{device:"mobile", n:10}, ...]
+      // byOS: [{os:"Android", n:10}, ...]
+      // byBrowser: [{browser:"Chrome", n:10}, ...]
+      // byCountry: [{country:"FR", n:20}, ...]
+      // bySource: [{source:"qr", n:5}, ...] (si tu l’ajoutes côté Worker)
+
+      // Compat si ton API a des noms différents (ex: appareil/os/navigateur/pays)
+      const byDevice = normalizeRows(data.byDevice, ["device","appareil"], "device");
+      const byOS = normalizeRows(data.byOS, ["os"], "os");
+      const byBrowser = normalizeRows(data.byBrowser, ["browser","navigateur"], "browser");
+      const byCountry = normalizeRows(data.byCountry, ["country","pays"], "country");
+      const bySource = normalizeRows(data.bySource, ["source"], "source");
+
+      renderPairs("boxDevice", "Appareils", byDevice, "device", "n");
+      renderPairs("boxOS", "OS", byOS, "os", "n");
+      renderPairs("boxBrowser", "Navigateurs", byBrowser, "browser", "n");
+      renderPairs("boxCountry", "Pays", byCountry, "country", "n");
+      renderPairs("boxSource", "Origine", bySource, "source", "n");
+
+      // Optionnel si ton Worker les renvoie
+      // hourlyToday: [{hour:"00", n:1}, ...]
+      // last: [{created_at,...}, ...]
+      renderHourly(data.hourlyToday || data.byHour || []);
+      renderLastClicks(data.last || data.lastClicks || []);
+
+      setStatus("OK • stats à jour ✅", true);
+
+    } catch (e) {
+      setStatus(`Erreur: ${safeText(e?.message || e)}`, false);
+    }
+  }
+
+  function normalizeRows(rows, possibleKeyFields, targetKey) {
+    if (!Array.isArray(rows)) return [];
+    // transforme [{appareil:"mobile", n:10}] -> [{device:"mobile", n:10}]
+    return rows.map(r => {
+      const out = { ...r };
+      if (!(targetKey in out)) {
+        for (const k of possibleKeyFields) {
+          if (k in out) {
+            out[targetKey] = out[k];
+            break;
+          }
+        }
+      }
+      // fallback
+      if (!(targetKey in out)) out[targetKey] = "?";
+      if (!("n" in out)) out.n = 0;
+      return out;
+    });
+  }
+
+  // ========= PWA INSTALL + SW =========
+  function setupPWAInstall() {
+    let deferredPrompt = null;
+    const btn = $("btnInstall");
+    if (!btn) return;
+
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       deferredPrompt = e;
@@ -335,21 +384,21 @@ function setupPWAInstall() {
       deferredPrompt = null;
       btn.hidden = true;
     });
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+    }
   }
 
-  // Service Worker
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./service-worker.js").catch(console.error);
-  }
-}
+  // ========= INIT =========
+  document.addEventListener("DOMContentLoaded", () => {
+    const br = $("btnRefresh");
+    const bc = $("btnCopyLinks");
+    if (br) br.addEventListener("click", refresh);
+    if (bc) bc.addEventListener("click", copyLinks);
 
-document.addEventListener("DOMContentLoaded", () => {
-  const b1 = $("btnRefresh");
-  const b2 = $("btnCopyLinks");
+    setupPWAInstall();
+    refresh();
+  });
 
-  if (b1) b1.addEventListener("click", refresh);
-  if (b2) b2.addEventListener("click", copyLinks);
-
-  setupPWAInstall();
-  refresh();
-});
+})();
