@@ -1,153 +1,29 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta charset="utf-8">
   <title>Stats ADN66</title>
-
-  <!-- PWA -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b1620" />
-  <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
-  <!-- Social -->
-  <meta property="og:title" content="Stats ADN66" />
-  <meta property="og:description" content="Tableau de bord marketing — suivi des clics (apero / catalan / chance / jeux)." />
-  <meta property="og:image" content="assets/share-1200x630.jpg" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-
-  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#0fd2c9">
 </head>
+<body style="font-family:system-ui;background:#0b1f24;color:#fff">
+  <h1>Stats ADN66</h1>
+  <button onclick="loadStats()">Actualiser</button>
+  <pre id="out">Chargement…</pre>
 
-<body>
-  <div class="bg">
-    <div class="bgGlow"></div>
-    <div class="bgBokeh" aria-hidden="true"></div>
-  </div>
-
-  <header class="top">
-    <div class="brand">
-      <img class="brandLogo" src="assets/icon-192.png" alt="Apéro de Nuit 66" />
-      <div class="brandText">
-        <div class="brandTitle">Stats ADN66</div>
-        <div class="brandSub">Dashboard marketing • suivi des clics</div>
-      </div>
-    </div>
-
-    <div class="pillRow">
-      <span class="pill"><span class="dot"></span> Cloudflare Workers</span>
-      <span class="pill">D1 • stats_db</span>
-      <button id="btnInstall" class="pillBtn" type="button" hidden>Installer</button>
-    </div>
-  </header>
-
-  <main class="wrap">
-    <section class="hero card">
-      <div class="heroLeft">
-        <h1>Vision claire sur tes pubs</h1>
-        <p>
-          Ici tu vois <b>qui ramène des clics</b> : <b>Apéro</b>, <b>Catalan</b>, <b>Chance</b>, <b>Jeux</b>.
-          C’est l’outil qui te dit où mettre ton énergie (SMS, Facebook, flyers).
-        </p>
-        <div class="heroActions">
-          <button id="btnRefresh" class="primary" type="button">Actualiser</button>
-          <button id="btnCopyLinks" class="ghost" type="button">Copier mes liens</button>
-        </div>
-        <div id="status" class="status" role="status" aria-live="polite"></div>
-      </div>
-
-      <div class="heroRight">
-        <div class="kpiGrid">
-          <div class="kpi">
-            <div class="kpiLabel">Clics total</div>
-            <div class="kpiValue" id="kpiTotal">—</div>
-          </div>
-          <div class="kpi">
-            <div class="kpiLabel">Aujourd’hui</div>
-            <div class="kpiValue" id="kpiToday">—</div>
-          </div>
-        </div>
-
-        <div class="miniNote">
-          <div class="miniNoteTitle">Campagnes suivies</div>
-          <div class="miniNoteValue">4</div>
-          <div class="miniNoteSub">apero • catalan • chance • jeux</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid">
-      <div class="card tile">
-        <div class="tileHead">
-          <div class="badge">Campagne</div>
-          <div class="tileTitle">Apéro</div>
-        </div>
-        <div class="tileValue" id="cApero">—</div>
-        <div class="tileFoot">Nom exact : <code>apero</code></div>
-      </div>
-
-      <div class="card tile">
-        <div class="tileHead">
-          <div class="badge">Campagne</div>
-          <div class="tileTitle">Catalan</div>
-        </div>
-        <div class="tileValue" id="cCatalan">—</div>
-        <div class="tileFoot">Nom exact : <code>catalan</code></div>
-      </div>
-
-      <div class="card tile">
-        <div class="tileHead">
-          <div class="badge">Campagne</div>
-          <div class="tileTitle">Chance</div>
-        </div>
-        <div class="tileValue" id="cChance">—</div>
-        <div class="tileFoot">Nom exact : <code>chance</code></div>
-      </div>
-
-      <div class="card tile">
-        <div class="tileHead">
-          <div class="badge">Campagne</div>
-          <div class="tileTitle">Jeux</div>
-        </div>
-        <div class="tileValue" id="cJeux">—</div>
-        <div class="tileFoot">Nom exact : <code>jeux</code></div>
-      </div>
-    </section>
-
-    <section class="card tableCard">
-      <div class="tableHead">
-        <h2>Détails par campagne</h2>
-        <div class="tableMeta">Tri : le plus cliqué en premier</div>
-      </div>
-
-      <div class="tableWrap">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Campagne</th>
-              <th>Clics</th>
-              <th>Liens</th>
-            </tr>
-          </thead>
-          <tbody id="tbody">
-            <tr><td colspan="3" class="muted">Chargement…</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="tableFoot">
-        <div class="muted">Astuce : ajoute cette page à l’écran d’accueil pour l’avoir comme une app.</div>
-      </div>
-    </section>
-
-    <footer class="foot">
-      © Apéro de Nuit 66 — Stats ADN66
-    </footer>
-  </main>
-
-  <script src="app.js"></script>
+<script>
+async function loadStats(){
+  const r = await fetch("https://stats.aperos.net/api/stats");
+  const j = await r.json();
+  document.getElementById("out").textContent = JSON.stringify(j,null,2);
+}
+loadStats();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
 </body>
 </html>
