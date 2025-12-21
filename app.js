@@ -1,404 +1,399 @@
-/* Stats ADN66 - app.js (frontend)
-   - Affiche: total, aujourd'hui
-   - Détails: campagnes, sources, appareils, OS, navigateurs, pays
-   - Optionnel si dispo côté API: clics par heure, derniers clics
+/* Stats ADN66 — app.js (Front PWA)
+   Objectif: afficher toutes les stats collectées par le Worker (D1)
+   - API en relatif pour éviter CORS/DNS: /api/stats
+   - Tolère réponse HTML (évite "Unexpected token '<'")
 */
 
-(() => {
-  "use strict";
+const API_STATS = "/api/stats"; // IMPORTANT: relatif
+const API_HEALTH = "/api/health"; // optionnel
 
-  // ========= CONFIG =========
-  const CAMPAIGNS = [
-    { key: "apero", label: "Apéro" },
-    { key: "catalan", label: "Catalan" },
-    { key: "chance", label: "Chance" },
-    { key: "jeux", label: "Jeux" },
+const $ = (id) => document.getElementById(id);
+
+function elExists(id) { return !!$(id); }
+
+function setText(id, text) {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = text;
+}
+
+function setHTML(id, html) {
+  const el = $(id);
+  if (!el) return;
+  el.innerHTML = html;
+}
+
+function setStatus(msg, isErr = false) {
+  const el = $("status");
+  if (!el) return;
+  el.textContent = msg || "";
+  el.classList.toggle("err", !!isErr);
+}
+
+function formatInt(n) {
+  const num = Number(n);
+  if (!Number.isFinite(num)) return "—";
+  return new Intl.NumberFormat("fr-FR").format(num);
+}
+
+function safeLabel(v) {
+  if (v === null || v === undefined) return "?";
+  const s = String(v).trim();
+  return s.length ? s : "?";
+}
+
+function campaignLabel(key) {
+  const map = {
+    apero: "Apéro",
+    catalan: "Catalan",
+    chance: "Chance",
+    jeux: "Jeux",
+    game: "Jeux",
+  };
+  return map[key] || key;
+}
+
+/** Worker: /go/:campaign?src=QR (destinations fixées côté Worker) */
+function buildGoLink(campaign, src = "direct") {
+  const u = new URL(`/go/${encodeURIComponent(campaign)}`, window.location.origin);
+  if (src) u.searchParams.set("src", src);
+  return u.toString();
+}
+
+function defaultDestinations() {
+  // Tes vraies destinations
+  return {
+    apero: "https://aperos.net",
+    catalan: "https://catalan.aperos.net",
+    chance: "https://chance.aperos.net",
+    jeux: "https://game.aperos.net",
+  };
+}
+
+/** Fetch JSON robuste: si HTML => message clair */
+async function fetchJson(url) {
+  const res = await fetch(url, { cache: "no-store" });
+
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  const text = await res.text();
+
+  if (!res.ok) {
+    // même si c'est une erreur, on affiche un bout du body pour debug
+    const snippet = text.slice(0, 180).replace(/\s+/g, " ").trim();
+    throw new Error(`HTTP ${res.status} — ${snippet || "réponse vide"}`);
+  }
+
+  if (!ct.includes("application/json") && !text.trim().startsWith("{") && !text.trim().startsWith("[")) {
+    const snippet = text.slice(0, 180).replace(/\s+/g, " ").trim();
+    throw new Error(`Réponse non-JSON (probable HTML). Début: ${snippet}`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    const snippet = text.slice(0, 180).replace(/\s+/g, " ").trim();
+    throw new Error(`JSON invalide. Début: ${snippet}`);
+  }
+}
+
+/** Normalise les différentes clés possibles renvoyées par ton API */
+function normalizeStats(data) {
+  // total / today (ou aujourd'hui)
+  const total = Number(data.total ?? data.totalClicks ?? 0);
+  const today = Number(data.today ?? data.aujourdhui ?? data["aujourd'hui"] ?? 0);
+
+  // byCampaign : [{campaign,n}] OU autre
+  const byCampaign = Array.isArray(data.byCampaign) ? data.byCampaign : [];
+
+  // source
+  const bySource = Array.isArray(data.bySource) ? data.bySource : [];
+
+  // device / os / browser / country (selon ton screenshot)
+  const byDevice = Array.isArray(data.byDevice) ? data.byDevice : [];
+  const byOS = Array.isArray(data.byOS) ? data.byOS : [];
+  const byBrowser = Array.isArray(data.byBrowser) ? data.byBrowser : [];
+  const byCountry = Array.isArray(data.byCountry) ? data.byCountry : [];
+
+  // derniers clics / hourly si ton worker les ajoute plus tard
+  const last = Array.isArray(data.last) ? data.last : (Array.isArray(data.lastClicks) ? data.lastClicks : []);
+  const hourly = Array.isArray(data.hourly) ? data.hourly : (Array.isArray(data.byHour) ? data.byHour : []);
+
+  return { total, today, byCampaign, bySource, byDevice, byOS, byBrowser, byCountry, last, hourly };
+}
+
+/** Rend une petite table dans un container <tbody> ou <div> */
+function renderKeyValueTable(tbodyId, rows, keyTitle = "Nom", valTitle = "Clics", keyGetter, valGetter) {
+  const el = $(tbodyId);
+  if (!el) return;
+
+  // Si c'est un TBODY: on met des <tr>. Sinon: on met une mini table.
+  const isTbody = el.tagName && el.tagName.toLowerCase() === "tbody";
+
+  const safeRows = (rows || []).map(r => ({
+    k: safeLabel(keyGetter(r)),
+    v: Number(valGetter(r) ?? 0)
+  })).sort((a,b)=> b.v - a.v);
+
+  if (isTbody) {
+    el.innerHTML = "";
+    for (const r of safeRows) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${escapeHtml(r.k)}</td><td>${formatInt(r.v)}</td>`;
+      el.appendChild(tr);
+    }
+  } else {
+    const html = `
+      <table class="mini">
+        <thead><tr><th>${escapeHtml(keyTitle)}</th><th>${escapeHtml(valTitle)}</th></tr></thead>
+        <tbody>
+          ${safeRows.map(r => `<tr><td>${escapeHtml(r.k)}</td><td>${formatInt(r.v)}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    `;
+    el.innerHTML = html;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function fillKPIs({ total, today }) {
+  if (elExists("kpiTotal")) setText("kpiTotal", formatInt(total));
+  if (elExists("kpiToday")) setText("kpiToday", formatInt(today));
+}
+
+/** Met à jour les compteurs campagne (cartes) + table principale */
+function fillCampaigns(byCampaign) {
+  const dest = defaultDestinations();
+
+  // Convertit byCampaign array -> map
+  const map = {};
+  for (const r of (byCampaign || [])) {
+    const k = (r.campaign ?? r.campagne ?? r.name ?? "").toString().toLowerCase();
+    map[k] = Number(r.n ?? r.count ?? r.clicks ?? 0);
+  }
+
+  // Cartes simples si tes IDs existent
+  if (elExists("cApero")) setText("cApero", formatInt(map.apero ?? 0));
+  if (elExists("cCatalan")) setText("cCatalan", formatInt(map.catalan ?? 0));
+  if (elExists("cChance")) setText("cChance", formatInt(map.chance ?? 0));
+  if (elExists("cJeux")) setText("cJeux", formatInt(map.jeux ?? map.game ?? 0));
+
+  // Table “Détails par campagne” si tu as déjà un <tbody id="tbody">
+  const tbody = $("tbody");
+  if (!tbody) return;
+
+  const keys = ["apero", "catalan", "chance", "jeux"];
+  const rows = keys.map(k => ({
+    key: k,
+    clicks: Number(map[k] ?? 0),
+    to: dest[k] || "#"
+  })).sort((a,b)=> b.clicks - a.clicks);
+
+  tbody.innerHTML = "";
+  for (const r of rows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(campaignLabel(r.key))}</td>
+      <td>${formatInt(r.clicks)}</td>
+      <td>
+        <a href="${buildGoLink(r.key, "direct")}" target="_blank" rel="noopener">Lien tracking</a>
+        <span class="muted"> • </span>
+        <a href="${r.to}" target="_blank" rel="noopener">Destination</a>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+function fillBreakdowns({ bySource, byDevice, byOS, byBrowser, byCountry }) {
+  // SOURCE
+  renderKeyValueTable(
+    "tbodySource",
+    bySource,
+    "Source",
+    "Clics",
+    (r) => r.source ?? r.src ?? r.origine ?? "?",
+    (r) => r.n ?? r.count ?? r.clicks ?? 0
+  );
+
+  // DEVICE (dans ton JSON: "appareil")
+  renderKeyValueTable(
+    "tbodyDevice",
+    byDevice,
+    "Appareil",
+    "Clics",
+    (r) => r.device ?? r.appareil ?? "?",
+    (r) => r.n ?? r.count ?? r.clicks ?? 0
+  );
+
+  // OS
+  renderKeyValueTable(
+    "tbodyOS",
+    byOS,
+    "OS",
+    "Clics",
+    (r) => r.os ?? "?",
+    (r) => r.n ?? r.count ?? r.clicks ?? 0
+  );
+
+  // Browser (dans ton JSON: "navigateur")
+  renderKeyValueTable(
+    "tbodyBrowser",
+    byBrowser,
+    "Navigateur",
+    "Clics",
+    (r) => r.browser ?? r.navigateur ?? "?",
+    (r) => r.n ?? r.count ?? r.clicks ?? 0
+  );
+
+  // Country (dans ton JSON: "pays")
+  renderKeyValueTable(
+    "tbodyCountry",
+    byCountry,
+    "Pays",
+    "Clics",
+    (r) => r.country ?? r.pays ?? "?",
+    (r) => r.n ?? r.count ?? r.clicks ?? 0
+  );
+}
+
+/** Optionnel: derniers clics si tu ajoutes une table dans ton HTML */
+function fillLastClicks(last) {
+  const tbody = $("tbodyLast");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+  for (const r of (last || []).slice(0, 50)) {
+    const date = safeLabel(r.created_at ?? r.date ?? r.time ?? "");
+    const camp = safeLabel(r.campaign ?? r.campagne ?? "");
+    const src = safeLabel(r.source ?? r.src ?? "");
+    const country = safeLabel(r.country ?? r.pays ?? "");
+    const device = safeLabel(r.device ?? r.appareil ?? "");
+    const os = safeLabel(r.os ?? "");
+    const browser = safeLabel(r.browser ?? r.navigateur ?? "");
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(date)}</td>
+      <td>${escapeHtml(campaignLabel(camp.toLowerCase()))}</td>
+      <td>${escapeHtml(src)}</td>
+      <td>${escapeHtml(country)}</td>
+      <td>${escapeHtml(device)}</td>
+      <td>${escapeHtml(os)}</td>
+      <td>${escapeHtml(browser)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+/** Copie des liens prêts à l’emploi (direct, QR, FB, SMS, flyer) */
+async function copyLinks() {
+  const lines = [
+    "LIENS TRACKING (Stats ADN66)",
+    "",
+    `Apéro direct : ${buildGoLink("apero","direct")}`,
+    `Apéro QR : ${buildGoLink("apero","QR")}`,
+    `Apéro Facebook : ${buildGoLink("apero","facebook")}`,
+    `Apéro SMS : ${buildGoLink("apero","sms")}`,
+    "",
+    `Catalan direct : ${buildGoLink("catalan","direct")}`,
+    `Catalan QR : ${buildGoLink("catalan","QR")}`,
+    `Catalan Facebook : ${buildGoLink("catalan","facebook")}`,
+    `Catalan SMS : ${buildGoLink("catalan","sms")}`,
+    "",
+    `Chance direct : ${buildGoLink("chance","direct")}`,
+    `Chance QR : ${buildGoLink("chance","QR")}`,
+    `Chance Facebook : ${buildGoLink("chance","facebook")}`,
+    `Chance SMS : ${buildGoLink("chance","sms")}`,
+    "",
+    `Jeux direct : ${buildGoLink("jeux","direct")}`,
+    `Jeux QR : ${buildGoLink("jeux","QR")}`,
+    `Jeux Facebook : ${buildGoLink("jeux","facebook")}`,
+    `Jeux SMS : ${buildGoLink("jeux","sms")}`,
   ];
 
-  // Liste "source" proposée (tu peux en ajouter)
-  const SOURCES = [
-    { key: "direct", label: "Direct" },
-    { key: "sms", label: "SMS" },
-    { key: "facebook", label: "Facebook" },
-    { key: "messenger",label: "Messenger" },
-    { key: "insta", label: "Instagram" },
-    { key: "snap", label: "Snap" },
-    { key: "flyer", label: "Flyer" },
-    { key: "qr", label: "QR" },
-  ];
+  const txt = lines.join("\n");
 
-  // API: même domaine
-  const API_STATS = "/api/stats";
-  const API_HEALTH = "/api/health";
-
-  // ========= HELPERS =========
-  const $ = (id) => document.getElementById(id);
-
-  function safeText(v) {
-    if (v === null || v === undefined) return "?";
-    const s = String(v).trim();
-    return s.length ? s : "?";
+  try {
+    await navigator.clipboard.writeText(txt);
+    setStatus("Liens copiés ✅ (QR / FB / SMS / direct)");
+  } catch {
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    setStatus("Liens copiés ✅");
   }
+}
 
-  function n(v) {
-    const x = Number(v);
-    return Number.isFinite(x) ? x : 0;
-  }
+function setupPWAInstall() {
+  let deferredPrompt = null;
+  const btn = $("btnInstall");
+  if (!btn) return;
 
-  function setStatus(msg, ok = true) {
-    const el = $("status");
-    if (!el) return;
-    el.textContent = msg;
-    el.dataset.ok = ok ? "1" : "0";
-  }
-
-  function fmtDateLocal(isoLike) {
-    // created_at peut être "YYYY-MM-DD HH:MM:SS" (sqlite) ou ISO
-    if (!isoLike) return "";
-    const s = String(isoLike);
-
-    // essaie ISO direct
-    let d = new Date(s);
-    if (!isNaN(d.getTime())) return d.toLocaleString();
-
-    // essaie "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SS"
-    const s2 = s.replace(" ", "T");
-    d = new Date(s2);
-    if (!isNaN(d.getTime())) return d.toLocaleString();
-
-    return s;
-  }
-
-  function renderPairs(containerId, title, rows, keyField, valueField) {
-    const root = $(containerId);
-    if (!root) return;
-
-    // Structure attendue:
-    // <div id="xxx">
-    // <div class="mini-title">...</div> (optionnel)
-    // <div class="rows"></div> (optionnel)
-    // </div>
-
-    const titleEl = root.querySelector("[data-title]") || root.querySelector(".mini-title");
-    if (titleEl && title) titleEl.textContent = title;
-
-    const list = root.querySelector("[data-rows]") || root;
-    list.innerHTML = "";
-
-    if (!rows || !rows.length) {
-      const empty = document.createElement("div");
-      empty.className = "empty";
-      empty.textContent = "—";
-      list.appendChild(empty);
-      return;
-    }
-
-    const table = document.createElement("table");
-    table.className = "mini-table";
-
-    const thead = document.createElement("thead");
-    thead.innerHTML = `<tr><th>${safeText(keyField)}</th><th>${safeText(valueField)}</th></tr>`;
-    table.appendChild(thead);
-
-    const tbody = document.createElement("tbody");
-    for (const r of rows) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${escapeHtml(safeText(r[keyField]))}</td>
-        <td>${escapeHtml(String(n(r[valueField])))}</td>
-      `;
-      tbody.appendChild(tr);
-    }
-    table.appendChild(tbody);
-    list.appendChild(table);
-  }
-
-  function renderCampaignCards(byCampaign) {
-    // Affichage “cards” si tu as des IDs dédiés (sinon ça ne casse pas)
-    // Ex: <span id="camp_apero">0</span> etc.
-    if (!byCampaign || !byCampaign.length) return;
-
-    const map = new Map();
-    for (const r of byCampaign) map.set(String(r.campaign || "").toLowerCase(), n(r.n));
-
-    for (const c of CAMPAIGNS) {
-      const el = $(`camp_${c.key}`);
-      if (el) el.textContent = String(map.get(c.key) ?? 0);
-    }
-
-    // tableau “Détails par campagne” si existe
-    const tableWrap = $("tableCampaign");
-    if (tableWrap) {
-      tableWrap.innerHTML = "";
-      const table = document.createElement("table");
-      table.className = "big-table";
-      table.innerHTML = `
-        <thead>
-          <tr><th>Campagne</th><th>Clics</th></tr>
-        </thead>
-        <tbody></tbody>
-      `;
-      const tbody = table.querySelector("tbody");
-
-      // tri décroissant
-      const sorted = [...byCampaign].sort((a,b) => n(b.n) - n(a.n));
-      for (const r of sorted) {
-        const key = safeText(r.campaign);
-        const label = CAMPAIGNS.find(x => x.key === String(key).toLowerCase())?.label || key;
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${escapeHtml(label)}</td><td>${escapeHtml(String(n(r.n)))}</td>`;
-        tbody.appendChild(tr);
-      }
-      tableWrap.appendChild(table);
-    }
-  }
-
-  function renderHourly(hourlyRows) {
-    // Attendu: [{hour:"00", n: 1}, ...]
-    const root = $("tableHourly");
-    if (!root) return;
-
-    root.innerHTML = "";
-    if (!hourlyRows || !hourlyRows.length) {
-      root.textContent = "—";
-      return;
-    }
-
-    const table = document.createElement("table");
-    table.className = "big-table";
-    table.innerHTML = `
-      <thead><tr><th>Heure</th><th>Clics</th></tr></thead>
-      <tbody></tbody>
-    `;
-    const tbody = table.querySelector("tbody");
-
-    const sorted = [...hourlyRows].sort((a,b) => String(a.hour).localeCompare(String(b.hour)));
-    for (const r of sorted) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${escapeHtml(safeText(r.hour))}</td><td>${escapeHtml(String(n(r.n)))}</td>`;
-      tbody.appendChild(tr);
-    }
-    table.appendChild(tbody);
-    root.appendChild(table);
-  }
-
-  function renderLastClicks(lastRows) {
-    // Attendu: [{created_at,campaign,source,country,device,os,browser,referrer,domain,path}]
-    const root = $("tableLast");
-    if (!root) return;
-
-    root.innerHTML = "";
-    if (!lastRows || !lastRows.length) {
-      root.textContent = "—";
-      return;
-    }
-
-    const table = document.createElement("table");
-    table.className = "big-table";
-    table.innerHTML = `
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Campagne</th>
-          <th>Source</th>
-          <th>Pays</th>
-          <th>Appareil</th>
-          <th>OS</th>
-          <th>Navigateur</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    `;
-    const tbody = table.querySelector("tbody");
-
-    for (const r of lastRows) {
-      const campKey = safeText(r.campaign).toLowerCase();
-      const campLabel = CAMPAIGNS.find(x => x.key === campKey)?.label || safeText(r.campaign);
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${escapeHtml(fmtDateLocal(r.created_at))}</td>
-        <td>${escapeHtml(campLabel)}</td>
-        <td>${escapeHtml(safeText(r.source))}</td>
-        <td>${escapeHtml(safeText(r.country))}</td>
-        <td>${escapeHtml(safeText(r.device))}</td>
-        <td>${escapeHtml(safeText(r.os))}</td>
-        <td>${escapeHtml(safeText(r.browser))}</td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    table.appendChild(tbody);
-    root.appendChild(table);
-  }
-
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
-  // ========= LINKS =========
-  function buildGoLink(campaignKey, src) {
-    // relative (même domaine): /go/chance?src=QR
-    const u = new URL(location.origin + `/go/${campaignKey}`);
-    if (src) u.searchParams.set("src", src);
-    return u.toString();
-  }
-
-  function buildLinksText() {
-    // Format prêt à coller
-    // (Tu peux modifier les sources comme tu veux)
-    const lines = [];
-
-    lines.push("=== ADN66 Tracking Links ===");
-    lines.push("");
-
-    for (const c of CAMPAIGNS) {
-      lines.push(`--- ${c.label} ---`);
-      lines.push(`Direct: ${buildGoLink(c.key)}`);
-      lines.push(`QR: ${buildGoLink(c.key, "QR")}`);
-      lines.push(`Flyer: ${buildGoLink(c.key, "flyer")}`);
-      lines.push(`SMS: ${buildGoLink(c.key, "sms")}`);
-      lines.push(`FB: ${buildGoLink(c.key, "facebook")}`);
-      lines.push("");
-    }
-
-    lines.push("Astuce: tu peux inventer une source: ?src=toto (ça s’affiche dans Origine).");
-    return lines.join("\n");
-  }
-
-  async function copyLinks() {
-    const text = buildLinksText();
-    try {
-      await navigator.clipboard.writeText(text);
-      setStatus("Liens copiés ✅", true);
-    } catch {
-      // fallback
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
-      setStatus("Liens copiés ✅", true);
-    }
-  }
-
-  // ========= FETCH / RENDER =========
-  async function refresh() {
-    setStatus("Chargement…", true);
-
-    try {
-      // petit check health (optionnel)
-      await fetch(API_HEALTH, { cache: "no-store" }).catch(() => {});
-
-      const r = await fetch(API_STATS, { cache: "no-store" });
-      const data = await r.json();
-
-      if (!data?.ok) {
-        setStatus(`Erreur: ${safeText(data?.error)}`, false);
-        return;
-      }
-
-      // Totaux
-      if ($("total")) $("total").textContent = String(n(data.total));
-      if ($("today")) $("today").textContent = String(n(data.today));
-
-      // Campagnes
-      renderCampaignCards(data.byCampaign || []);
-
-      // Blocs simples (si tes IDs existent)
-      // NB: ton API renvoie des objets genre:
-      // byDevice: [{device:"mobile", n:10}, ...]
-      // byOS: [{os:"Android", n:10}, ...]
-      // byBrowser: [{browser:"Chrome", n:10}, ...]
-      // byCountry: [{country:"FR", n:20}, ...]
-      // bySource: [{source:"qr", n:5}, ...] (si tu l’ajoutes côté Worker)
-
-      // Compat si ton API a des noms différents (ex: appareil/os/navigateur/pays)
-      const byDevice = normalizeRows(data.byDevice, ["device","appareil"], "device");
-      const byOS = normalizeRows(data.byOS, ["os"], "os");
-      const byBrowser = normalizeRows(data.byBrowser, ["browser","navigateur"], "browser");
-      const byCountry = normalizeRows(data.byCountry, ["country","pays"], "country");
-      const bySource = normalizeRows(data.bySource, ["source"], "source");
-
-      renderPairs("boxDevice", "Appareils", byDevice, "device", "n");
-      renderPairs("boxOS", "OS", byOS, "os", "n");
-      renderPairs("boxBrowser", "Navigateurs", byBrowser, "browser", "n");
-      renderPairs("boxCountry", "Pays", byCountry, "country", "n");
-      renderPairs("boxSource", "Origine", bySource, "source", "n");
-
-      // Optionnel si ton Worker les renvoie
-      // hourlyToday: [{hour:"00", n:1}, ...]
-      // last: [{created_at,...}, ...]
-      renderHourly(data.hourlyToday || data.byHour || []);
-      renderLastClicks(data.last || data.lastClicks || []);
-
-      setStatus("OK • stats à jour ✅", true);
-
-    } catch (e) {
-      setStatus(`Erreur: ${safeText(e?.message || e)}`, false);
-    }
-  }
-
-  function normalizeRows(rows, possibleKeyFields, targetKey) {
-    if (!Array.isArray(rows)) return [];
-    // transforme [{appareil:"mobile", n:10}] -> [{device:"mobile", n:10}]
-    return rows.map(r => {
-      const out = { ...r };
-      if (!(targetKey in out)) {
-        for (const k of possibleKeyFields) {
-          if (k in out) {
-            out[targetKey] = out[k];
-            break;
-          }
-        }
-      }
-      // fallback
-      if (!(targetKey in out)) out[targetKey] = "?";
-      if (!("n" in out)) out.n = 0;
-      return out;
-    });
-  }
-
-  // ========= PWA INSTALL + SW =========
-  function setupPWAInstall() {
-    let deferredPrompt = null;
-    const btn = $("btnInstall");
-    if (!btn) return;
-
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      btn.hidden = false;
-    });
-
-    btn.addEventListener("click", async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      btn.hidden = true;
-    });
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./service-worker.js").catch(console.error);
-    }
-  }
-
-  // ========= INIT =========
-  document.addEventListener("DOMContentLoaded", () => {
-    const br = $("btnRefresh");
-    const bc = $("btnCopyLinks");
-    if (br) br.addEventListener("click", refresh);
-    if (bc) bc.addEventListener("click", copyLinks);
-
-    setupPWAInstall();
-    refresh();
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    btn.hidden = false;
   });
 
-})();
+  btn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    btn.hidden = true;
+  });
+
+  // Service Worker (si présent)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+  }
+}
+
+async function refresh() {
+  setStatus("Chargement des stats…");
+  try {
+    // Petit check health optionnel
+    // (si tu veux le garder, sinon commente)
+    // await fetch(API_HEALTH, { cache: "no-store" }).catch(()=>{});
+
+    const raw = await fetchJson(API_STATS);
+
+    if (raw && raw.ok === false) {
+      throw new Error(raw.error || "API ok=false");
+    }
+
+    const data = normalizeStats(raw);
+
+    fillKPIs(data);
+    fillCampaigns(data.byCampaign);
+    fillBreakdowns(data);
+    fillLastClicks(data.last);
+
+    setStatus("OK • stats à jour ✅");
+  } catch (err) {
+    console.error(err);
+    setStatus(`Erreur: ${err.message}`, true);
+    // On évite de laisser des KPI "vides" si l’API plante
+    if (elExists("kpiTotal")) setText("kpiTotal", "—");
+    if (elExists("kpiToday")) setText("kpiToday", "—");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (elExists("btnRefresh")) $("btnRefresh").addEventListener("click", refresh);
+  if (elExists("btnCopyLinks")) $("btnCopyLinks").addEventListener("click", copyLinks);
+  setupPWAInstall();
+  refresh();
+});
