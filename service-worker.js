@@ -1,5 +1,4 @@
-
-const CACHE = "stat-adn66-v1";
+const CACHE = "stat-adn66-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,7 +7,7 @@ const ASSETS = [
   "./manifest.json",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
-  "./assets/share-1200x630.jpg"
+  "./assets/share-1200x630.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -27,12 +26,13 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Always network for API (Cloudflare Worker)
-  if (url.hostname === "stats.aperos.net"){
-    event.respondWith(fetch(req));
+  // Network for API and tracking domain
+  if (url.hostname === "stats.aperos.net") {
+    event.respondWith(fetch(req).catch(() => caches.match(req)));
     return;
   }
 
+  // Cache-first for app shell
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req).then((res) => {
       const copy = res.clone();
