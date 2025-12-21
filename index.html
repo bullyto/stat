@@ -3,175 +3,659 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Stats ADN66</title>
-  <meta name="description" content="Dashboard marketing • suivi des clics (SMS, Facebook, flyers) — Apéro de Nuit 66." />
-  <meta name="theme-color" content="#0b2b31" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="actifs/icon-192.png" />
-  <link rel="apple-touch-icon" href="actifs/icon-192.png" />
+  <meta name="theme-color" content="#0b2b2b" />
+  <title>Stats • Apéro de Nuit 66</title>
 
-  <!-- Social share -->
-  <meta property="og:title" content="Stats ADN66" />
-  <meta property="og:description" content="Suivi des clics APERO DE NUIT 66" />
-  <meta property="og:image" content="actifs/og-1200x630.png" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css" />
+  <meta name="description" content="Dashboard marketing • suivi des clics" />
+  <style>
+    :root{
+      --bg0:#061a1a;
+      --bg1:#082424;
+      --card:#0b2f2f;
+      --card2:#0a2a2a;
+      --stroke:rgba(255,255,255,.10);
+      --stroke2:rgba(255,255,255,.14);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.68);
+      --muted2:rgba(255,255,255,.56);
+      --accent:#42f5c6;
+      --accent2:#19d3a1;
+      --warn:#ffd86b;
+      --bad:#ff6b8a;
+      --shadow: 0 18px 55px rgba(0,0,0,.35);
+      --radius: 26px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:
+        radial-gradient(1200px 800px at 30% -10%, rgba(66,245,198,.18), transparent 55%),
+        radial-gradient(900px 700px at 110% 30%, rgba(25,211,161,.16), transparent 55%),
+        radial-gradient(800px 700px at 20% 110%, rgba(255,216,107,.08), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg0) 60%);
+    }
+    .wrap{
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 18px 16px 80px;
+    }
+    header{
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+      justify-content:space-between;
+      padding: 6px 2px 16px;
+    }
+    .brand{
+      display:flex; gap:12px; align-items:center;
+    }
+    .logo{
+      width:52px; height:52px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+    .logo img{width:100%; height:100%; object-fit:cover}
+    .title h1{
+      margin:0; font-size: 18px; letter-spacing:.2px;
+    }
+    .title .sub{
+      margin-top:4px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .pills{display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 9px 12px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      color:var(--muted);
+      font-size:13px;
+      user-select:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: var(--accent2);
+      box-shadow: 0 0 18px rgba(25,211,161,.55);
+      flex:0 0 auto;
+    }
+
+    .controls{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      margin: 10px 0 14px;
+    }
+    .btn{
+      border:1px solid var(--stroke2);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-weight: 650;
+      letter-spacing:.2px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      cursor:pointer;
+      user-select:none;
+      transition: transform .08s ease;
+    }
+    .btn:active{transform: scale(.98)}
+    .btn.primary{
+      border-color: rgba(66,245,198,.32);
+      background: linear-gradient(180deg, rgba(66,245,198,.22), rgba(25,211,161,.10));
+    }
+    .btn.ghost{
+      background: rgba(255,255,255,.04);
+    }
+
+    .status{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding: 12px 14px;
+      border:1px solid var(--stroke);
+      border-radius: 16px;
+      background: rgba(255,255,255,.045);
+      color:var(--muted);
+    }
+    .status b{color:var(--text)}
+    .toggle{
+      display:flex; align-items:center; gap:10px;
+      margin-left:auto;
+    }
+    .switch{
+      width: 56px; height: 32px; border-radius: 999px;
+      background: rgba(255,255,255,.10);
+      border:1px solid var(--stroke);
+      position:relative;
+      cursor:pointer;
+      user-select:none;
+    }
+    .knob{
+      width: 26px; height: 26px; border-radius: 999px;
+      background: rgba(255,255,255,.78);
+      position:absolute; top:2px; left:2px;
+      transition: left .18s ease, background .18s ease;
+      box-shadow: 0 10px 25px rgba(0,0,0,.35);
+    }
+    .switch.on{
+      background: rgba(25,211,161,.22);
+      border-color: rgba(25,211,161,.38);
+    }
+    .switch.on .knob{left:28px; background: rgba(66,245,198,.92)}
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    @media(min-width:760px){
+      .grid{grid-template-columns: 1.1fr .9fr}
+      .span2{grid-column: 1 / -1}
+    }
+
+    .hero{
+      padding: 18px 18px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+    }
+    .hero h2{
+      margin: 0 0 8px;
+      font-size: 44px;
+      letter-spacing: 1px;
+      line-height: 1.02;
+    }
+    .hero .site{
+      color:var(--muted);
+      font-size: 16px;
+      margin-top: 2px;
+    }
+
+    .card{
+      padding: 16px 16px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.045);
+      border: 1px solid var(--stroke);
+      box-shadow: 0 16px 45px rgba(0,0,0,.28);
+    }
+    .kpi-title{
+      color:var(--muted);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .kpi-value{
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: .6px;
+    }
+
+    .sectionTitle{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; margin-bottom: 12px;
+    }
+    .sectionTitle h3{
+      margin:0;
+      font-size: 22px;
+      letter-spacing: .2px;
+    }
+    .chip{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      color:var(--muted);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12.5px;
+    }
+
+    table{
+      width:100%;
+      border-collapse: collapse;
+      overflow:hidden;
+      border-radius: 18px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.10);
+    }
+    th,td{
+      padding: 12px 12px;
+      text-align:left;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    th{
+      color:var(--muted2);
+      font-weight: 750;
+      letter-spacing: .8px;
+      font-size: 12px;
+    }
+    tr:last-child td{border-bottom:none}
+    td.num{text-align:right; font-variant-numeric: tabular-nums;}
+    .empty{
+      color:var(--muted);
+      font-size: 14px;
+      padding: 10px 4px 0;
+    }
+
+    .modalBack{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding: 18px;
+    }
+    .modalBack.show{display:flex}
+    .modal{
+      width:min(720px, 100%);
+      border-radius: 26px;
+      background: rgba(6,26,26,.96);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: 0 28px 100px rgba(0,0,0,.6);
+      overflow:hidden;
+    }
+    .modalHead{
+      padding: 16px 16px 10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .modalHead b{font-size: 15px}
+    .modalBody{padding: 14px 16px 16px}
+    textarea{
+      width:100%;
+      min-height: 130px;
+      resize: vertical;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      padding: 12px 12px;
+      font-size: 14px;
+      outline:none;
+    }
+    .help{
+      margin-top:10px;
+      color:var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .row{display:flex; gap:10px; justify-content:flex-end; padding-top: 12px; flex-wrap:wrap}
+    .foot{
+      margin-top: 18px;
+      color: rgba(255,255,255,.45);
+      font-size: 12px;
+      text-align:center;
+    }
+    .toast{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 18px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.55);
+      color: var(--text);
+      font-size: 13px;
+      display:none;
+      z-index: 50;
+    }
+    .toast.show{display:block}
+  </style>
 </head>
 <body>
-  <div class="bg"></div>
-  <header class="top">
-    <div class="brand">
-      <img class="logo" src="actifs/icon-192.png" alt="Logo Stats ADN66" />
-      <div class="titles">
-        <div class="h1">Stats ADN66</div>
-        <div class="sub">Dashboard marketing • suivi des clics</div>
-      </div>
-    </div>
-
-    <div class="pills">
-      <span class="pill"><span class="dot"></span> Cloudflare Workers</span>
-      <span class="pill">D1 • stats_db</span>
-    </div>
-
-    <div class="actions">
-      <button id="btnInstall" class="btn ghost" hidden>Installer</button>
-      <button id="btnRefresh" class="btn">Actualiser</button>
-      <button id="btnCopyLinks" class="btn ghost">Copier mes liens</button>
-    </div>
-
-    <div class="statusRow">
-      <div id="status" class="status warn">Chargement…</div>
-      <div class="mini">
-        <label class="switch">
-          <input id="toggleAuto" type="checkbox" checked />
-          <span class="slider"></span>
-        </label>
-        <span>Auto</span>
-      </div>
-    </div>
-  </header>
-
-  <main class="wrap">
-    <section class="hero card">
-      <div class="heroTitle">APERO DE NUIT 66</div>
-      <p class="heroText">
-        www.aperodenuit.com
-      </p>
-    </section>
-
-    <section class="grid">
-      <div class="card kpi">
-        <div class="kpiLabel">Clics total</div>
-        <div id="kpiTotal" class="kpiValue">—</div>
-      </div>
-      <div class="card kpi">
-        <div class="kpiLabel">Aujourd’hui</div>
-        <div id="kpiToday" class="kpiValue">—</div>
-      </div>
-      <div class="card kpi">
-        <div class="kpiLabel">Campagnes suivies</div>
-        <div class="kpiValue">4</div>
-        <div class="kpiHint">apero • catalan • chance • jeux</div>
-      </div>
-    </section>
-
-    <section class="grid2">
-      <div class="card">
-        <div class="cardHead">
-          <div class="cardTitle">Campagnes</div>
-          <div class="chip">Nom exact: apero / catalan / chance / jeux</div>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo"><img src="./icons/icon-192.png" alt=""></div>
+        <div class="title">
+          <h1>Stats</h1>
+          <div class="sub">Dashboard marketing • suivi des clics</div>
         </div>
-        <div id="campaignCards" class="campaignCards"></div>
+      </div>
+
+      <div class="pills">
+        <div class="pill"><span class="dot"></span>Cloudflare Workers</div>
+        <div class="pill">D1 • <span id="dbName">stats_db</span></div>
+      </div>
+    </header>
+
+    <div class="controls">
+      <button class="btn primary" id="btnRefresh">Actualiser</button>
+      <button class="btn ghost" id="btnCopyLinks">Copier mes liens</button>
+
+      <div class="status" style="flex:1">
+        <div>
+          <b id="statusTitle">—</b>
+          <div style="margin-top:4px;font-size:12.5px;color:var(--muted)">
+            Dernière maj : <span id="lastUpdate">—</span>
+          </div>
+        </div>
+        <div class="toggle">
+          <span style="color:var(--muted)">Auto</span>
+          <div class="switch" id="autoSwitch" role="switch" aria-checked="false">
+            <div class="knob"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="hero span2">
+        <h2>APERO DE NUIT<br>66</h2>
+        <div class="site">www.aperodenuit.com</div>
       </div>
 
       <div class="card">
-        <div class="cardHead">
-          <div class="cardTitle">Détails par campagne</div>
+        <div class="kpi-title">Clics total</div>
+        <div class="kpi-value" id="kpiTotal">—</div>
+      </div>
+
+      <div class="card">
+        <div class="kpi-title">Aujourd’hui</div>
+        <div class="kpi-value" id="kpiToday">—</div>
+      </div>
+
+      <div class="card span2" id="cardCampaigns">
+        <div class="sectionTitle">
+          <h3>Campagnes</h3>
           <div class="chip">Tri : le plus cliqué en premier</div>
         </div>
-        <div class="tableWrap">
-          <table class="table" id="tableCampaign">
-            <thead><tr><th>Campagne</th><th class="right">Clics</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <div class="chip" style="margin-bottom:12px">Nom exact : <span id="campaignHint">apero / catalan / chance / jeux</span></div>
+        <div id="tblCampaigns"></div>
       </div>
 
-      <div class="card">
-        <div class="cardHead">
-          <div class="cardTitle">Origine (source)</div>
-          <div class="chip">ex: direct / facebook / sms / flyer 'qr'</div>
+      <div class="card" id="cardSource">
+        <div class="sectionTitle">
+          <h3>Origine</h3>
+          <div class="chip">source</div>
         </div>
-        <div class="tableWrap">
-          <table class="table" id="tableSource">
-            <thead><tr><th>Source</th><th class="right">Clics</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <div class="chip" style="margin-bottom:12px">ex : direct / facebook / sms / flyer 'qr'</div>
+        <div id="tblSource"></div>
       </div>
 
-      <div class="card">
-        <div class="cardHead">
-          <div class="cardTitle">Clics par heure (aujourd’hui)</div>
-          <div class="chip">Heure locale</div>
+      <div class="card" id="cardDevices">
+        <div class="sectionTitle">
+          <h3>Appareils</h3>
+          <div class="chip">Android / iPhone / Desktop</div>
         </div>
-        <div id="hourly" class="bars"></div>
+        <div id="tblDevices"></div>
       </div>
 
-      <div class="card">
-        <div class="cardHead">
-          <div class="cardTitle">Derniers clics</div>
-          <div class="chip">Les 50 derniers</div>
+      <div class="card" id="cardOS">
+        <div class="sectionTitle">
+          <h3>Systèmes</h3>
+          <div class="chip">OS</div>
         </div>
-        <div class="tableWrap">
-          <table class="table small" id="tableLatest">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Campagne</th>
-                <th>Source</th>
-                <th>Pays</th>
-                <th class="hideSm">Referrer</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="hint"> Part Steven Hauviller</div>
+        <div id="tblOS"></div>
       </div>
-    </section>
 
-    <footer class="foot">
-      © Apéro de Nuit 66 — Stats ADN66
-      <span class="sep">•</span>
-      <a href="https://stats.aperos.net/api/health" target="_blank" rel="noreferrer">API health</a>
-      <span class="sep">•</span>
-      <a href="https://stats.aperos.net/api/stats" target="_blank" rel="noreferrer">API stats</a>
-      <span class="sep">•</span>
-      <button class="linkBtn" id="btnHardRefresh">forcer maj</button>
-    </footer>
-  </main>
-
-  <dialog id="linksModal" class="modal">
-    <div class="modalCard">
-      <div class="modalHead">
-        <div>
-          <div class="modalTitle">Liens trackés</div>
-          <div class="modalSub">Appuie pour copier (et teste direct)</div>
+      <div class="card" id="cardBrowser">
+        <div class="sectionTitle">
+          <h3>Navigateurs</h3>
+          <div class="chip">Browser</div>
         </div>
-        <button class="btn ghost" id="btnCloseModal">Fermer</button>
+        <div id="tblBrowser"></div>
       </div>
-      <div id="linksList" class="linksList"></div>
-      <div class="modalHint">
-        Si GitHub Pages garde une vieille version : clique “forcer maj” en bas (ça purge le cache local de la PWA).
+
+      <div class="card span2" id="cardCountry">
+        <div class="sectionTitle">
+          <h3>Pays</h3>
+          <div class="chip">Country</div>
+        </div>
+        <div id="tblCountry"></div>
       </div>
     </div>
-  </dialog>
 
-  <script src="app.js"></script>
+    <div class="foot">
+      API: <span id="apiBase"></span>
+    </div>
+  </div>
+
+  <!-- Modal liens -->
+  <div class="modalBack" id="modalBack">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Mes liens de tracking">
+      <div class="modalHead">
+        <b>Mes liens (copie rapide)</b>
+        <button class="btn ghost" id="btnCloseModal">Fermer</button>
+      </div>
+      <div class="modalBody">
+        <textarea id="linksArea" spellcheck="false"></textarea>
+        <div class="help">
+          Mets 1 lien par ligne. Le bouton <b>Copier mes liens</b> copiera tout dans le presse‑papier.<br>
+          C’est stocké en local sur ton téléphone (localStorage).
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="btnResetLinks">Vider</button>
+          <button class="btn primary" id="btnSaveLinks">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const API_BASE = (location.origin || "https://stats.aperos.net").replace(/\/$/, "");
+  const API_STATS = API_BASE + "/api/stats";
+  const API_HEALTH = API_BASE + "/api/health";
+
+  const $ = (id) => document.getElementById(id);
+
+  $("apiBase").textContent = API_BASE;
+
+  function formatDate(d){
+    try{
+      return new Intl.DateTimeFormat("fr-FR", { dateStyle:"short", timeStyle:"medium" }).format(d);
+    }catch(e){
+      return d.toISOString();
+    }
+  }
+
+  function toast(msg){
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove("show"), 1600);
+  }
+
+  function toRows(obj){
+    if(!obj || typeof obj !== "object") return [];
+    return Object.entries(obj).map(([k,v]) => ({ k, v: Number(v)||0 }))
+      .sort((a,b)=>b.v-a.v);
+  }
+
+  function renderTable(targetId, rows, colA, colB){
+    const el = $(targetId);
+    if(!rows || rows.length === 0){
+      el.innerHTML = '<div class="empty">Aucune donnée.</div>';
+      return;
+    }
+    const html = [
+      "<table>",
+        "<thead><tr>",
+          `<th>${colA}</th>`,
+          `<th style="text-align:right">${colB}</th>`,
+        "</tr></thead>",
+        "<tbody>",
+        ...rows.map(r => (
+          "<tr>" +
+            `<td>${escapeHtml(r.k)}</td>` +
+            `<td class="num">${r.v}</td>` +
+          "</tr>"
+        )),
+        "</tbody>",
+      "</table>"
+    ].join("");
+    el.innerHTML = html;
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  async function fetchJson(url){
+    const r = await fetch(url, { cache: "no-store" });
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    return await r.json();
+  }
+
+  async function ping(){
+    try{
+      const j = await fetchJson(API_HEALTH);
+      return !!(j && (j.ok === true || j.ok === "true"));
+    }catch(e){
+      return false;
+    }
+  }
+
+  function setStatus(ok, detail){
+    if(ok){
+      $("statusTitle").textContent = "OK • stats à jour ✅";
+    }else{
+      $("statusTitle").textContent = "OFF • API indisponible ⚠️";
+    }
+    if(detail) $("lastUpdate").textContent = detail;
+  }
+
+  async function refresh(){
+    $("btnRefresh").disabled = true;
+    try{
+      const [isOk, stats] = await Promise.all([
+        ping(),
+        fetchJson(API_STATS)
+      ]);
+
+      $("kpiTotal").textContent = (stats.total ?? "—");
+      $("kpiToday").textContent = (stats.today ?? "—");
+
+      const bc = toRows(stats.byCampaign);
+      renderTable("tblCampaigns", bc, "CAMPAGNE", "CLICS");
+
+      const bs = toRows(stats.bySource || stats.byReferrer || stats.byOrigin);
+      renderTable("tblSource", bs, "SOURCE", "CLICS");
+
+      const bd = toRows(stats.byDevice);
+      renderTable("tblDevices", bd, "APPAREIL", "CLICS");
+
+      const bos = toRows(stats.byOS);
+      renderTable("tblOS", bos, "OS", "CLICS");
+
+      const bb = toRows(stats.byBrowser);
+      renderTable("tblBrowser", bb, "BROWSER", "CLICS");
+
+      const bct = toRows(stats.byCountry);
+      renderTable("tblCountry", bct, "PAYS", "CLICS");
+
+      const now = new Date();
+      setStatus(isOk, formatDate(now));
+    }catch(e){
+      setStatus(false, formatDate(new Date()));
+      toast("Impossible de charger /api/stats");
+    }finally{
+      $("btnRefresh").disabled = false;
+    }
+  }
+
+  // Auto refresh
+  const LS_AUTO = "adn66_stats_auto";
+  let auto = localStorage.getItem(LS_AUTO) === "1";
+  function applyAuto(){
+    const sw = $("autoSwitch");
+    sw.classList.toggle("on", auto);
+    sw.setAttribute("aria-checked", auto ? "true":"false");
+  }
+  applyAuto();
+
+  let timer = null;
+  function armAuto(){
+    if(timer) clearInterval(timer);
+    if(auto){
+      timer = setInterval(refresh, 30000);
+    }
+  }
+  armAuto();
+
+  $("autoSwitch").addEventListener("click", () => {
+    auto = !auto;
+    localStorage.setItem(LS_AUTO, auto ? "1":"0");
+    applyAuto();
+    armAuto();
+    if(auto) toast("Auto: ON"); else toast("Auto: OFF");
+  });
+
+  $("btnRefresh").addEventListener("click", refresh);
+
+  // Copy links (local)
+  const LS_LINKS = "adn66_stats_links";
+  const defaultLinks =
+`https://stats.aperos.net/
+https://stats.aperos.net/api/stats
+https://stats.aperos.net/api/health`;
+
+  function openModal(){
+    $("modalBack").classList.add("show");
+    $("linksArea").value = localStorage.getItem(LS_LINKS) || defaultLinks;
+    setTimeout(() => $("linksArea").focus(), 50);
+  }
+  function closeModal(){
+    $("modalBack").classList.remove("show");
+  }
+
+  $("btnCopyLinks").addEventListener("click", async () => {
+    const links = (localStorage.getItem(LS_LINKS) || defaultLinks).trim();
+    try{
+      await navigator.clipboard.writeText(links);
+      toast("Liens copiés ✅");
+    }catch(e){
+      openModal();
+      toast("Copie bloquée • ouvre le menu");
+    }
+  });
+
+  $("btnCloseModal").addEventListener("click", closeModal);
+  $("modalBack").addEventListener("click", (e) => { if(e.target === $("modalBack")) closeModal(); });
+
+  $("btnSaveLinks").addEventListener("click", () => {
+    localStorage.setItem(LS_LINKS, $("linksArea").value || "");
+    toast("Enregistré ✅");
+    closeModal();
+  });
+
+  $("btnResetLinks").addEventListener("click", () => {
+    $("linksArea").value = "";
+  });
+
+  // PWA SW
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  }
+
+  refresh();
+})();
+</script>
 </body>
 </html>
