@@ -1,29 +1,49 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <title>Stats ADN66</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0fd2c9">
+<meta charset="utf-8">
+<title>Stats ADN66</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
-<body style="font-family:system-ui;background:#0b1f24;color:#fff">
-  <h1>Stats ADN66</h1>
-  <button onclick="loadStats()">Actualiser</button>
-  <pre id="out">Chargement…</pre>
+<body>
 
-<script>
-async function loadStats(){
-  const r = await fetch("https://stats.aperos.net/api/stats");
-  const j = await r.json();
-  document.getElementById("out").textContent = JSON.stringify(j,null,2);
-}
-loadStats();
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
-</script>
+<button id="refreshBtn">Actualiser</button>
+<div id="statusLine"></div>
+
+<div>
+  Total: <span id="totalCount">0</span><br>
+  Aujourd'hui: <span id="todayCount">0</span>
+</div>
+
+<div>
+  <h3>Apéro</h3>
+  <div id="count_apero">0</div>
+  <small id="exact_apero"></small>
+</div>
+
+<div>
+  <h3>Catalan</h3>
+  <div id="count_catalan">0</div>
+  <small id="exact_catalan"></small>
+</div>
+
+<div>
+  <h3>Chance</h3>
+  <div id="count_chance">0</div>
+  <small id="exact_chance"></small>
+</div>
+
+<div>
+  <h3>Jeux</h3>
+  <div id="count_jeux">0</div>
+  <small id="exact_jeux"></small>
+</div>
+
+<table>
+<thead><tr><th>Campagne</th><th>Clics</th></tr></thead>
+<tbody id="campaignTableBody"></tbody>
+</table>
+
+<script src="app.js"></script>
 </body>
 </html>
