@@ -1,83 +1,90 @@
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
+const API_BASE = "https://stats.aperos.net";
 
-    // ===== HEADERS CORS =====
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    };
+const CAMPAIGNS = [
+  { key: "apero", label: "Apéro" },
+  { key: "catalan", label: "Catalan" },
+  { key: "chance", label: "Chance" },
+  { key: "jeux", label: "Jeux" }
+];
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
+function normalizeKey(s) {
+  return (s ?? "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function campaignsToMap(campaigns) {
+  const map = {};
+  for (const c of CAMPAIGNS) map[c.key] = 0;
+
+  if (campaigns && !Array.isArray(campaigns) && typeof campaigns === "object") {
+    for (const [k, v] of Object.entries(campaigns)) {
+      const nk = normalizeKey(k);
+      if (nk in map) map[nk] = Number(v) || 0;
     }
+    return map;
+  }
 
-    // ===== HEALTH CHECK =====
-    if (url.pathname === "/api/health") {
-      return new Response(JSON.stringify({ ok: true }), {
-        headers: { ...corsHeaders, "content-type": "application/json" },
-      });
+  if (Array.isArray(campaigns)) {
+    for (const row of campaigns) {
+      const nk = normalizeKey(row?.campaign);
+      if (nk in map) map[nk] = Number(row?.n) || 0;
     }
+    return map;
+  }
 
-    // ===== STATS API =====
-    if (url.pathname === "/api/stats") {
-      const pass = url.searchParams.get("pass");
-      if (pass !== "0000") {
-        return new Response(JSON.stringify({ error: "unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "content-type": "application/json" },
-        });
-      }
+  return map;
+}
 
-      const total = await env.DB
-        .prepare("SELECT COUNT(*) as c FROM clicks")
-        .first();
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
 
-      const today = await env.DB
-        .prepare(
-          "SELECT COUNT(*) as c FROM clicks WHERE date(created_at)=date('now')"
-        )
-        .first();
+function renderCampaignCards(map) {
+  for (const c of CAMPAIGNS) {
+    setText(`count_${c.key}`, String(map[c.key] ?? 0));
+    setText(`exact_${c.key}`, c.key);
+  }
 
-      const campaigns = {};
-      const rows = await env.DB
-        .prepare(
-          "SELECT campaign, COUNT(*) as c FROM clicks GROUP BY campaign"
-        )
-        .all();
-
-      for (const r of rows.results) {
-        campaigns[r.campaign] = r.c;
-      }
-
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          total: total.c,
-          today: today.c,
-          campaigns,
-        }),
-        { headers: { ...corsHeaders, "content-type": "application/json" } }
-      );
+  const tbody = document.getElementById("campaignTableBody");
+  if (tbody) {
+    tbody.innerHTML = "";
+    const rows = [...CAMPAIGNS].sort((a, b) => (map[b.key] ?? 0) - (map[a.key] ?? 0));
+    for (const r of rows) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${r.label}</td><td style="text-align:right">${map[r.key] ?? 0}</td>`;
+      tbody.appendChild(tr);
     }
+  }
+}
 
-    // ===== TRACKING & REDIRECT =====
-    if (url.pathname.startsWith("/go/")) {
-      const campaign = url.pathname.split("/")[2];
+async function refreshStats() {
+  try {
+    setText("statusLine", "Chargement…");
+    const res = await fetch(`${API_BASE}/api/stats`, { cache: "no-store" });
+    const data = await res.json();
 
-      if (!campaign) {
-        return new Response("Campaign missing", { status: 400 });
-      }
+    if (!data?.ok) throw new Error(data?.error || "API ko");
 
-      await env.DB.prepare(
-        "INSERT INTO clicks (campaign) VALUES (?)"
-      ).bind(campaign).run();
+    setText("totalCount", String(data.total ?? 0));
+    setText("todayCount", String(data.today ?? 0));
 
-      const target = `https://${campaign}.aperos.net`;
-      return Response.redirect(target, 302);
-    }
+    const map = campaignsToMap(data.campaigns);
+    renderCampaignCards(map);
 
-    return new Response("OK", { headers: corsHeaders });
-  },
-};
+    setText("statusLine", "OK • stats à jour ✅");
+  } catch (e) {
+    console.error(e);
+    setText("statusLine", `Erreur : ${e?.message || e}`);
+  }
+}
+
+window.addEventListener("load", () => {
+  const btn = document.getElementById("refreshBtn");
+  if (btn) btn.addEventListener("click", refreshStats);
+  refreshStats();
+});
