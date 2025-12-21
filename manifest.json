@@ -1,9 +1,32 @@
 {
   "name": "Stats ADN66",
   "short_name": "Stats ADN66",
-  "start_url": "/",
+  "start_url": "./?source=pwa",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0b1f24",
-  "theme_color": "#0fd2c9",
-  "icons": []
+  "background_color": "#071f24",
+  "theme_color": "#0b2b31",
+  "description": "Dashboard marketing • suivi des clics (Apéro, Catalan, Chance, Jeux).",
+  "icons": [
+    {
+      "src": "actifs/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "actifs/icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "actifs/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "actifs/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }

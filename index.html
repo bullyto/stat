@@ -1,49 +1,178 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<title>Stats ADN66</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Stats ADN66</title>
+  <meta name="description" content="Dashboard marketing • suivi des clics (SMS, Facebook, flyers) — Apéro de Nuit 66." />
+  <meta name="theme-color" content="#0b2b31" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="actifs/icon-192.png" />
+  <link rel="apple-touch-icon" href="actifs/icon-192.png" />
+
+  <!-- Social share -->
+  <meta property="og:title" content="Stats ADN66" />
+  <meta property="og:description" content="Vision claire sur tes pubs — suivi des clics Apéro, Catalan, Chance, Jeux." />
+  <meta property="og:image" content="actifs/og-1200x630.png" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="bg"></div>
+  <header class="top">
+    <div class="brand">
+      <img class="logo" src="actifs/icon-192.png" alt="Logo Stats ADN66" />
+      <div class="titles">
+        <div class="h1">Stats ADN66</div>
+        <div class="sub">Dashboard marketing • suivi des clics</div>
+      </div>
+    </div>
 
-<button id="refreshBtn">Actualiser</button>
-<div id="statusLine"></div>
+    <div class="pills">
+      <span class="pill"><span class="dot"></span> Cloudflare Workers</span>
+      <span class="pill">D1 • stats_db</span>
+    </div>
 
-<div>
-  Total: <span id="totalCount">0</span><br>
-  Aujourd'hui: <span id="todayCount">0</span>
-</div>
+    <div class="actions">
+      <button id="btnInstall" class="btn ghost" hidden>Installer</button>
+      <button id="btnRefresh" class="btn">Actualiser</button>
+      <button id="btnCopyLinks" class="btn ghost">Copier mes liens</button>
+    </div>
 
-<div>
-  <h3>Apéro</h3>
-  <div id="count_apero">0</div>
-  <small id="exact_apero"></small>
-</div>
+    <div class="statusRow">
+      <div id="status" class="status warn">Chargement…</div>
+      <div class="mini">
+        <label class="switch">
+          <input id="toggleAuto" type="checkbox" checked />
+          <span class="slider"></span>
+        </label>
+        <span>Auto</span>
+      </div>
+    </div>
+  </header>
 
-<div>
-  <h3>Catalan</h3>
-  <div id="count_catalan">0</div>
-  <small id="exact_catalan"></small>
-</div>
+  <main class="wrap">
+    <section class="hero card">
+      <div class="heroTitle">Vision claire sur tes pubs</div>
+      <p class="heroText">
+        Ici tu vois <b>qui ramène des clics</b> : <b>Apéro</b>, <b>Catalan</b>, <b>Chance</b>, <b>Jeux</b>.
+        C’est l’outil qui te dit où mettre ton énergie (SMS, Facebook, flyers).
+      </p>
+    </section>
 
-<div>
-  <h3>Chance</h3>
-  <div id="count_chance">0</div>
-  <small id="exact_chance"></small>
-</div>
+    <section class="grid">
+      <div class="card kpi">
+        <div class="kpiLabel">Clics total</div>
+        <div id="kpiTotal" class="kpiValue">—</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpiLabel">Aujourd’hui</div>
+        <div id="kpiToday" class="kpiValue">—</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpiLabel">Campagnes suivies</div>
+        <div class="kpiValue">4</div>
+        <div class="kpiHint">apero • catalan • chance • jeux</div>
+      </div>
+    </section>
 
-<div>
-  <h3>Jeux</h3>
-  <div id="count_jeux">0</div>
-  <small id="exact_jeux"></small>
-</div>
+    <section class="grid2">
+      <div class="card">
+        <div class="cardHead">
+          <div class="cardTitle">Campagnes</div>
+          <div class="chip">Nom exact: apero / catalan / chance / jeux</div>
+        </div>
+        <div id="campaignCards" class="campaignCards"></div>
+      </div>
 
-<table>
-<thead><tr><th>Campagne</th><th>Clics</th></tr></thead>
-<tbody id="campaignTableBody"></tbody>
-</table>
+      <div class="card">
+        <div class="cardHead">
+          <div class="cardTitle">Détails par campagne</div>
+          <div class="chip">Tri : le plus cliqué en premier</div>
+        </div>
+        <div class="tableWrap">
+          <table class="table" id="tableCampaign">
+            <thead><tr><th>Campagne</th><th class="right">Clics</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
 
-<script src="app.js"></script>
+      <div class="card">
+        <div class="cardHead">
+          <div class="cardTitle">Origine (source)</div>
+          <div class="chip">ex: direct / facebook / sms / flyer 'qr'</div>
+        </div>
+        <div class="tableWrap">
+          <table class="table" id="tableSource">
+            <thead><tr><th>Source</th><th class="right">Clics</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cardHead">
+          <div class="cardTitle">Clics par heure (aujourd’hui)</div>
+          <div class="chip">Heure locale</div>
+        </div>
+        <div id="hourly" class="bars"></div>
+      </div>
+
+      <div class="card">
+        <div class="cardHead">
+          <div class="cardTitle">Derniers clics</div>
+          <div class="chip">Les 50 derniers</div>
+        </div>
+        <div class="tableWrap">
+          <table class="table small" id="tableLatest">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Campagne</th>
+                <th>Source</th>
+                <th>Pays</th>
+                <th class="hideSm">Referrer</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="hint">Astuce : ajoute cette page à l’écran d’accueil pour l’avoir comme une app.</div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      © Apéro de Nuit 66 — Stats ADN66
+      <span class="sep">•</span>
+      <a href="https://stats.aperos.net/api/health" target="_blank" rel="noreferrer">API health</a>
+      <span class="sep">•</span>
+      <a href="https://stats.aperos.net/api/stats" target="_blank" rel="noreferrer">API stats</a>
+      <span class="sep">•</span>
+      <button class="linkBtn" id="btnHardRefresh">forcer maj</button>
+    </footer>
+  </main>
+
+  <dialog id="linksModal" class="modal">
+    <div class="modalCard">
+      <div class="modalHead">
+        <div>
+          <div class="modalTitle">Liens trackés</div>
+          <div class="modalSub">Appuie pour copier (et teste direct)</div>
+        </div>
+        <button class="btn ghost" id="btnCloseModal">Fermer</button>
+      </div>
+      <div id="linksList" class="linksList"></div>
+      <div class="modalHint">
+        Si GitHub Pages garde une vieille version : clique “forcer maj” en bas (ça purge le cache local de la PWA).
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
 </body>
 </html>
