@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0b2b31" />
+  <meta name="theme-color" content="#061425" />
   <title>Stats • Apéro de Nuit 66</title>
   <meta name="description" content="Dashboard marketing • suivi des clics" />
 
@@ -20,27 +20,45 @@
 
   <link rel="stylesheet" href="./style.css" />
 
-  <!-- ✅ AJOUT: amélioration typo/marketing + composants graphiques (sans toucher style.css) -->
+  <!-- ✅ AJOUTS (sans toucher style.css) : typo + marketing pro + thème bleu nuit + graphiques -->
   <style>
     :root{
-      --brand0:#071b1f;
-      --brand1:#0b2b31;
-      --brand2:#0e3a41;
-      --ink:#eaf6f8;
-      --muted:rgba(234,246,248,.72);
-      --soft:rgba(234,246,248,.10);
-      --line:rgba(234,246,248,.14);
-      --glow:0 18px 60px rgba(0,0,0,.35);
+      /* ✅ ADN Apéro de Nuit 66 : bleu nuit sombre */
+      --brand0:#040a14;   /* fond le plus sombre */
+      --brand1:#061425;   /* fond principal */
+      --brand2:#0a2342;   /* accent bleu nuit */
+      --ink:#eaf2ff;
+      --muted:rgba(234,242,255,.72);
+      --soft:rgba(234,242,255,.10);
+      --line:rgba(234,242,255,.14);
+      --glow:0 18px 60px rgba(0,0,0,.45);
       --r:18px;
+
+      /* accents “bleu électrique” */
+      --accentA: rgba(0,170,255,.92);
+      --accentB: rgba(0,120,255,.88);
+      --accentC: rgba(0,255,210,.70);
     }
 
-    /* Typo: plus premium sans dépendance externe */
     html,body{
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       letter-spacing:.2px;
+      background: var(--brand0) !important;
+      color: var(--ink) !important;
     }
+
+    /* ✅ Si ta .bg existe déjà, on la renforce en bleu nuit */
+    .bg{
+      background:
+        radial-gradient(1200px 460px at 10% 0%, rgba(0,170,255,.14), transparent 55%),
+        radial-gradient(900px 420px at 90% 10%, rgba(0,120,255,.12), transparent 55%),
+        radial-gradient(800px 420px at 40% 100%, rgba(0,255,210,.08), transparent 60%),
+        linear-gradient(180deg, var(--brand0), var(--brand1)) !important;
+    }
+
+    /* Typo premium */
     .h1{
       letter-spacing:.6px;
       text-transform: uppercase;
@@ -51,16 +69,25 @@
       font-weight: 600;
     }
 
-    /* Rebrand doux sur certains blocs existants (sans casser) */
-    .top{
-      backdrop-filter: blur(8px);
-    }
+    .top{ backdrop-filter: blur(8px); }
     .brand .logo{
       border-radius: 16px;
       box-shadow: 0 10px 26px rgba(0,0,0,.35);
     }
 
-    /* Hero: plus “marketing pro” */
+    /* ✅ KPI : chiffres plus petits + taille identique */
+    .kpiValue{
+      font-size: 28px !important;
+      line-height: 1.05 !important;
+      font-weight: 950 !important;
+      letter-spacing: .2px !important;
+      white-space: nowrap !important;
+    }
+    @media (max-width: 520px){
+      .kpiValue{ font-size: 24px !important; }
+    }
+
+    /* Hero plus marketing */
     .card.hero{
       position: relative;
       overflow: hidden;
@@ -71,8 +98,8 @@
       content:"";
       position:absolute; inset:-2px;
       background:
-        radial-gradient(1200px 380px at 10% 0%, rgba(0,255,210,.12), transparent 55%),
-        radial-gradient(900px 320px at 90% 10%, rgba(0,170,255,.10), transparent 52%),
+        radial-gradient(1200px 380px at 10% 0%, rgba(0,170,255,.18), transparent 55%),
+        radial-gradient(900px 320px at 90% 10%, rgba(0,120,255,.16), transparent 52%),
         linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
       pointer-events:none;
     }
@@ -85,8 +112,20 @@
       color: var(--muted);
       font-weight: 650;
     }
+    .mutedNote{
+      color: rgba(234,242,255,.60);
+      font-weight: 750;
+      font-size: 12px;
+      line-height: 1.25;
+    }
 
-    /* Titres de section (nouveau) */
+    /* Boutons + premium bleu */
+    .btn{ border-color: rgba(234,242,255,.16) !important; }
+    .btn:not(.ghost){
+      background: linear-gradient(180deg, rgba(0,170,255,.18), rgba(0,120,255,.12)) !important;
+    }
+
+    /* Titres sections */
     .sectionTitle{
       display:flex;
       align-items:baseline;
@@ -100,16 +139,16 @@
       letter-spacing:.6px;
       text-transform: uppercase;
       font-size: 12px;
-      color: rgba(234,246,248,.88);
+      color: rgba(234,242,255,.88);
     }
     .sectionTitle .k{
       font-weight: 800;
       font-size: 12px;
-      color: rgba(234,246,248,.60);
+      color: rgba(234,242,255,.60);
       white-space: nowrap;
     }
 
-    /* ✅ Graphiques */
+    /* ✅ Graphiques principaux */
     .vizGrid{
       display:grid;
       grid-template-columns: 1.15fr .85fr;
@@ -118,7 +157,6 @@
     @media (max-width: 980px){
       .vizGrid{ grid-template-columns: 1fr; }
     }
-
     .vizCard{
       border: 1px solid var(--line);
       border-radius: var(--r);
@@ -136,10 +174,10 @@
       height: 112px;
       border-radius: 50%;
       background: conic-gradient(
-        rgba(0,255,210,.85) 0% 25%,
-        rgba(0,170,255,.85) 25% 55%,
-        rgba(255,205,72,.85) 55% 80%,
-        rgba(255,110,110,.85) 80% 100%
+        rgba(0,170,255,.92) 0% 28%,
+        rgba(0,120,255,.88) 28% 58%,
+        rgba(80,160,255,.70) 58% 82%,
+        rgba(0,255,210,.60) 82% 100%
       );
       position:relative;
       box-shadow: 0 16px 44px rgba(0,0,0,.35);
@@ -150,7 +188,7 @@
       content:"";
       position:absolute;
       inset: 14px;
-      background: rgba(7,27,31,.92);
+      background: rgba(4,10,20,.92);
       border-radius: 50%;
       border: 1px solid rgba(255,255,255,.10);
     }
@@ -164,13 +202,10 @@
       z-index:1;
       font-weight: 900;
     }
-    .donutCenter .n{
-      font-size: 18px;
-      letter-spacing:.4px;
-    }
+    .donutCenter .n{ font-size: 18px; letter-spacing:.4px; }
     .donutCenter .s{
       font-size: 11px;
-      color: rgba(234,246,248,.60);
+      color: rgba(234,242,255,.60);
       font-weight: 800;
       letter-spacing:.6px;
       text-transform: uppercase;
@@ -192,33 +227,25 @@
       background: rgba(255,255,255,.03);
       border: 1px solid rgba(255,255,255,.08);
     }
-    .legendLeft{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      font-weight: 850;
-    }
+    .legendLeft{ display:flex; align-items:center; gap: 10px; font-weight: 850; }
     .swatch{
       width:10px; height:10px; border-radius:999px;
       box-shadow: 0 10px 22px rgba(0,0,0,.25);
     }
-    .sw1{ background: rgba(0,255,210,.85); }
-    .sw2{ background: rgba(0,170,255,.85); }
-    .sw3{ background: rgba(255,205,72,.85); }
-    .sw4{ background: rgba(255,110,110,.85); }
+    .sw1{ background: rgba(0,170,255,.92) !important; }
+    .sw2{ background: rgba(0,120,255,.88) !important; }
+    .sw3{ background: rgba(80,160,255,.70) !important; }
+    .sw4{ background: rgba(0,255,210,.60) !important; }
+
     .legendRight{
       display:flex; align-items:baseline; gap:10px;
-      color: rgba(234,246,248,.75);
+      color: rgba(234,242,255,.75);
       font-weight: 850;
       white-space:nowrap;
     }
-    .legendRight b{ color: rgba(234,246,248,.95); }
+    .legendRight b{ color: rgba(234,242,255,.95); }
 
-    .bars{
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-    }
+    .bars{ display:flex; flex-direction:column; gap: 10px; }
     .barRow{
       display:grid;
       grid-template-columns: 1fr;
@@ -235,11 +262,7 @@
       gap: 10px;
       font-weight: 900;
     }
-    .barTop .name{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-    }
+    .barTop .name{ display:flex; align-items:center; gap: 10px; }
     .pillMini{
       font-size: 11px;
       font-weight: 900;
@@ -249,7 +272,7 @@
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.05);
-      color: rgba(234,246,248,.78);
+      color: rgba(234,242,255,.78);
     }
     .track{
       height: 10px;
@@ -262,7 +285,7 @@
       height: 100%;
       width: 0%;
       border-radius: 999px;
-      background: linear-gradient(90deg, rgba(0,255,210,.85), rgba(0,170,255,.85));
+      background: linear-gradient(90deg, var(--accentA), var(--accentB)) !important;
       box-shadow: 0 10px 26px rgba(0,0,0,.25);
       transition: width .35s ease;
     }
@@ -286,22 +309,72 @@
       border: 1px solid rgba(255,255,255,.08);
       background: rgba(255,255,255,.03);
     }
-    .compareLine .l{
-      color: rgba(234,246,248,.75);
-      font-weight: 850;
+    .compareLine .l{ color: rgba(234,242,255,.75); font-weight: 850; }
+    .compareLine .r{ font-weight: 950; letter-spacing:.3px; }
+
+    /* ✅ Mini-graph universel pour TOUT (source/device/os/browser/country/hourly) */
+    .miniViz{
+      margin-top: 10px;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
     }
-    .compareLine .r{
+    .miniRow{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+    }
+    .miniTop{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 12px;
+      font-weight: 900;
+    }
+    .miniTop .lbl{
+      color: rgba(234,242,255,.92);
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 70%;
+    }
+    .miniTop .val{
+      color: rgba(234,242,255,.72);
       font-weight: 950;
-      letter-spacing:.3px;
+      white-space: nowrap;
     }
-    .mutedNote{
-      color: rgba(234,246,248,.60);
-      font-weight: 750;
+    .miniTop .pct{
+      font-weight: 950;
+      color: rgba(234,242,255,.86);
+      margin-left: 10px;
+    }
+    .miniTrack{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .miniFill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background: linear-gradient(90deg, var(--accentA), var(--accentB));
+      transition: width .35s ease;
+    }
+    .miniHint{
+      margin-top: 8px;
       font-size: 12px;
-      line-height: 1.25;
+      color: rgba(234,242,255,.60);
+      font-weight: 750;
     }
   </style>
 </head>
+
 <body>
   <div class="bg"></div>
 
@@ -367,7 +440,7 @@
       </div>
     </div>
 
-    <!-- ✅ AJOUT: Graphiques & % + Détails/Comparaisons (sans enlever quoi que ce soit) -->
+    <!-- ✅ AJOUT: Graphiques & % -->
     <div class="sectionTitle">
       <div class="t">Graphiques & pourcentages</div>
       <div class="k">Vue rapide marketing</div>
@@ -419,14 +492,14 @@
           </div>
 
           <div class="vizCard">
-            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,246,248,.85); margin-bottom:10px;">
+            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,242,255,.85); margin-bottom:10px;">
               Top campagnes (barres)
             </div>
             <div class="bars">
               <div class="barRow">
                 <div class="barTop">
                   <div class="name">Apéro <span class="pillMini" id="miniApero">—%</span></div>
-                  <div id="miniVApero" style="color:rgba(234,246,248,.78); font-weight:900;">—</div>
+                  <div id="miniVApero" style="color:rgba(234,242,255,.78); font-weight:900;">—</div>
                 </div>
                 <div class="track"><div class="fill" id="barApero"></div></div>
               </div>
@@ -434,7 +507,7 @@
               <div class="barRow">
                 <div class="barTop">
                   <div class="name">Catalan <span class="pillMini" id="miniCatalan">—%</span></div>
-                  <div id="miniVCatalan" style="color:rgba(234,246,248,.78); font-weight:900;">—</div>
+                  <div id="miniVCatalan" style="color:rgba(234,242,255,.78); font-weight:900;">—</div>
                 </div>
                 <div class="track"><div class="fill" id="barCatalan"></div></div>
               </div>
@@ -442,7 +515,7 @@
               <div class="barRow">
                 <div class="barTop">
                   <div class="name">Chance <span class="pillMini" id="miniChance">—%</span></div>
-                  <div id="miniVChance" style="color:rgba(234,246,248,.78); font-weight:900;">—</div>
+                  <div id="miniVChance" style="color:rgba(234,242,255,.78); font-weight:900;">—</div>
                 </div>
                 <div class="track"><div class="fill" id="barChance"></div></div>
               </div>
@@ -450,7 +523,7 @@
               <div class="barRow">
                 <div class="barTop">
                   <div class="name">Jeux <span class="pillMini" id="miniJeux">—%</span></div>
-                  <div id="miniVJeux" style="color:rgba(234,246,248,.78); font-weight:900;">—</div>
+                  <div id="miniVJeux" style="color:rgba(234,242,255,.78); font-weight:900;">—</div>
                 </div>
                 <div class="track"><div class="fill" id="barJeux"></div></div>
               </div>
@@ -459,6 +532,7 @@
         </div>
       </div>
 
+      <!-- ✅ AJOUT: Détails & comparaisons -->
       <div class="card">
         <div class="cardHead">
           <div>
@@ -470,26 +544,14 @@
 
         <div class="compareGrid">
           <div class="vizCard">
-            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,246,248,.85); margin-bottom:10px;">
+            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,242,255,.85); margin-bottom:10px;">
               Classement campagnes
             </div>
 
-            <div class="compareLine">
-              <div class="l">#1</div>
-              <div class="r" id="rank1">—</div>
-            </div>
-            <div class="compareLine">
-              <div class="l">#2</div>
-              <div class="r" id="rank2">—</div>
-            </div>
-            <div class="compareLine">
-              <div class="l">#3</div>
-              <div class="r" id="rank3">—</div>
-            </div>
-            <div class="compareLine">
-              <div class="l">#4</div>
-              <div class="r" id="rank4">—</div>
-            </div>
+            <div class="compareLine"><div class="l">#1</div><div class="r" id="rank1">—</div></div>
+            <div class="compareLine"><div class="l">#2</div><div class="r" id="rank2">—</div></div>
+            <div class="compareLine"><div class="l">#3</div><div class="r" id="rank3">—</div></div>
+            <div class="compareLine"><div class="l">#4</div><div class="r" id="rank4">—</div></div>
 
             <div class="mutedNote" style="margin-top:10px">
               Astuce : mets en avant le #1 dans tes messages (CTA + lien) et garde #2 comme variante A/B.
@@ -497,22 +559,13 @@
           </div>
 
           <div class="vizCard">
-            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,246,248,.85); margin-bottom:10px;">
+            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,242,255,.85); margin-bottom:10px;">
               Ratio & lecture rapide
             </div>
 
-            <div class="compareLine">
-              <div class="l">Total campagnes (somme)</div>
-              <div class="r" id="sumCampaigns">—</div>
-            </div>
-            <div class="compareLine">
-              <div class="l">Total global (kpi)</div>
-              <div class="r" id="kpiGlobalEcho">—</div>
-            </div>
-            <div class="compareLine">
-              <div class="l">Couverture suivie</div>
-              <div class="r" id="coverage">—%</div>
-            </div>
+            <div class="compareLine"><div class="l">Total campagnes (somme)</div><div class="r" id="sumCampaigns">—</div></div>
+            <div class="compareLine"><div class="l">Total global (kpi)</div><div class="r" id="kpiGlobalEcho">—</div></div>
+            <div class="compareLine"><div class="l">Couverture suivie</div><div class="r" id="coverage">—%</div></div>
 
             <div class="mutedNote" style="margin-top:10px">
               “Couverture suivie” = part du total global attribuée à tes 4 campagnes (utile si tu as d’autres routes/endpoints).
@@ -521,7 +574,7 @@
         </div>
       </div>
 
-      <!-- ✅ TON CONTENU ORIGINAL CONTINUE TEL QUEL -->
+      <!-- ✅ TON CODE ORIGINAL (inchangé) -->
       <div class="card">
         <div class="cardHead">
           <div>
@@ -599,6 +652,8 @@
             <tbody id="tbodySource"></tbody>
           </table>
         </div>
+        <!-- ✅ graph auto ici -->
+        <div id="vizSource" class="miniViz"></div>
       </div>
 
       <div class="card">
@@ -615,6 +670,8 @@
             <tbody id="tbodyDevice"></tbody>
           </table>
         </div>
+        <!-- ✅ graph auto ici -->
+        <div id="vizDevice" class="miniViz"></div>
       </div>
 
       <div class="card">
@@ -631,6 +688,8 @@
             <tbody id="tbodyOS"></tbody>
           </table>
         </div>
+        <!-- ✅ graph auto ici -->
+        <div id="vizOS" class="miniViz"></div>
       </div>
 
       <div class="card">
@@ -647,6 +706,8 @@
             <tbody id="tbodyBrowser"></tbody>
           </table>
         </div>
+        <!-- ✅ graph auto ici -->
+        <div id="vizBrowser" class="miniViz"></div>
       </div>
 
       <div class="card">
@@ -663,6 +724,8 @@
             <tbody id="tbodyCountry"></tbody>
           </table>
         </div>
+        <!-- ✅ graph auto ici -->
+        <div id="vizCountry" class="miniViz"></div>
       </div>
 
       <div class="card">
@@ -679,6 +742,8 @@
             <tbody id="tbodyHourly"></tbody>
           </table>
         </div>
+        <!-- ✅ graph auto ici -->
+        <div id="vizHourly" class="miniViz"></div>
       </div>
 
       <div class="card">
@@ -721,7 +786,7 @@
 
   <script src="./app.js"></script>
 
-  <!-- ✅ AJOUT: calcule % / donut / barres depuis tes valeurs existantes -->
+  <!-- ✅ AJOUTS JS : calcule %/donut/barres + graphes pour tout (lit les tbody existants) -->
   <script>
     (function(){
       const $ = (id) => document.getElementById(id);
@@ -731,42 +796,28 @@
         const n = String(txt).replace(/[^\d]/g,'');
         return n ? parseInt(n,10) : 0;
       }
-
       function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
-
-      function setText(id, val){
-        const el = $(id);
-        if(el) el.textContent = val;
-      }
-
-      function setPct(id, pct){
-        const el = $(id);
-        if(el) el.textContent = (isFinite(pct) ? pct.toFixed(0) : 0) + "%";
-      }
-
-      function setBar(id, pct){
-        const el = $(id);
-        if(el) el.style.width = clamp(pct,0,100).toFixed(2) + "%";
-      }
+      function setText(id, val){ const el = $(id); if(el) el.textContent = val; }
+      function setPct(id, pct){ const el = $(id); if(el) el.textContent = (isFinite(pct) ? pct.toFixed(0) : 0) + "%"; }
+      function setBar(id, pct){ const el = $(id); if(el) el.style.width = clamp(pct,0,100).toFixed(2) + "%"; }
 
       function paintDonut(pcts){
-        // pcts = [apero,catalan,chance,jeux] somme ~100
         const el = $("donut");
         if(!el) return;
+
         let a = 0;
         const stops = [];
         const colors = [
-          "rgba(0,255,210,.85)",
-          "rgba(0,170,255,.85)",
-          "rgba(255,205,72,.85)",
-          "rgba(255,110,110,.85)"
+          "rgba(0,170,255,.92)",
+          "rgba(0,120,255,.88)",
+          "rgba(80,160,255,.70)",
+          "rgba(0,255,210,.60)"
         ];
         for(let i=0;i<4;i++){
           const b = a + (isFinite(pcts[i]) ? pcts[i] : 0);
           stops.push(`${colors[i]} ${a.toFixed(2)}% ${b.toFixed(2)}%`);
           a = b;
         }
-        // si pas de data -> fallback gris doux
         if(a <= 0.01){
           el.style.background = "conic-gradient(rgba(255,255,255,.10) 0% 100%)";
         }else{
@@ -774,21 +825,17 @@
         }
       }
 
-      function updateViz(){
-        // valeurs campagnes
+      function updateCampaignViz(){
         const vA = toInt($("cApero")?.textContent);
         const vC = toInt($("cCatalan")?.textContent);
         const vCh = toInt($("cChance")?.textContent);
         const vJ = toInt($("cJeux")?.textContent);
 
         const sum = vA + vC + vCh + vJ;
-
-        // total global si dispo
         const kpiTotal = toInt($("kpiTotal")?.textContent);
 
         setText("donutTotal", sum ? String(sum) : (kpiTotal ? String(kpiTotal) : "—"));
 
-        // parts %
         const pA = sum ? (vA/sum*100) : 0;
         const pC = sum ? (vC/sum*100) : 0;
         const pCh = sum ? (vCh/sum*100) : 0;
@@ -806,7 +853,6 @@
 
         paintDonut([pA,pC,pCh,pJ]);
 
-        // ranking
         const items = [
           {name:"Apéro", v:vA, p:pA},
           {name:"Catalan", v:vC, p:pC},
@@ -825,20 +871,91 @@
         setText("coverage", (kpiTotal && sum) ? cov.toFixed(0) + "%" : "—%");
       }
 
-      // met à jour après chargement + sur refresh + quand DOM change
-      function boot(){
-        updateViz();
+      /* ✅ Mini graphes pour TOUT (Android/iOS, Chrome/Safari, etc.) */
+      function parseTableBody(tbodyId){
+        const tb = document.getElementById(tbodyId);
+        if(!tb) return [];
+        const rows = Array.from(tb.querySelectorAll("tr"));
+        const out = [];
+        for(const tr of rows){
+          const tds = tr.querySelectorAll("td,th");
+          if(!tds || tds.length < 2) continue;
+          const label = (tds[0].textContent || "").trim();
+          const value = toInt((tds[1].textContent || "").trim());
+          if(label) out.push({label, value});
+        }
+        return out;
+      }
 
-        // click refresh -> recalcul après le fetch
-        const btn = $("btnRefresh");
-        if(btn){
-          btn.addEventListener("click", () => setTimeout(updateViz, 350));
+      function renderMiniViz(containerId, items, opts={}){
+        const container = document.getElementById(containerId);
+        if(!container) return;
+
+        if(!items || !items.length){
+          container.innerHTML = `<div class="miniHint">— Pas de données pour l’instant</div>`;
+          return;
         }
 
-        // observer si app.js réécrit les valeurs
-        const watchIds = ["cApero","cCatalan","cChance","cJeux","kpiTotal","tbodyCampaign"];
-        const obs = new MutationObserver(() => updateViz());
-        watchIds.forEach(id=>{
+        const maxItems = opts.maxItems ?? 6;
+        const sorted = items.slice().sort((a,b)=>b.value-a.value);
+        const total = sorted.reduce((s,x)=>s+x.value,0) || 0;
+
+        const top = sorted.slice(0, maxItems);
+        const rest = sorted.slice(maxItems);
+        const otherSum = rest.reduce((s,x)=>s+x.value,0);
+
+        if(otherSum > 0){
+          top.push({label:"Autres", value: otherSum});
+        }
+
+        const maxV = Math.max(...top.map(x=>x.value), 1);
+
+        container.innerHTML =
+          top.map(x=>{
+            const pct = total ? (x.value/total*100) : 0;
+            const w = maxV ? (x.value/maxV*100) : 0;
+            return `
+              <div class="miniRow">
+                <div class="miniTop">
+                  <div class="lbl" title="${x.label}">${x.label}</div>
+                  <div class="val">${x.value}<span class="pct"> • ${pct.toFixed(0)}%</span></div>
+                </div>
+                <div class="miniTrack"><div class="miniFill" style="width:${w.toFixed(2)}%"></div></div>
+              </div>
+            `;
+          }).join("")
+          + (opts.hint ? `<div class="miniHint">${opts.hint}</div>` : "");
+      }
+
+      function updateAllMiniCharts(){
+        renderMiniViz("vizSource",  parseTableBody("tbodySource"),  {hint:"Répartition des clics par source (sms / facebook / qr / direct…)"});
+        renderMiniViz("vizDevice",  parseTableBody("tbodyDevice"),  {hint:"Mobile vs Desktop (et plus si l’API le renvoie)"});
+        renderMiniViz("vizOS",      parseTableBody("tbodyOS"),      {hint:"Android / iOS / Windows / macOS… (top + autres)"});
+        renderMiniViz("vizBrowser", parseTableBody("tbodyBrowser"), {hint:"Chrome / Safari / Edge… (top + autres)"});
+        renderMiniViz("vizCountry", parseTableBody("tbodyCountry"), {hint:"Pays (top + autres)"});
+        renderMiniViz("vizHourly",  parseTableBody("tbodyHourly"),  {hint:"Distribution aujourd’hui par heure (top + autres)"});
+      }
+
+      function boot(){
+        updateCampaignViz();
+        updateAllMiniCharts();
+
+        // refresh button : recalc après fetch
+        const btn = $("btnRefresh");
+        if(btn){
+          btn.addEventListener("click", () => {
+            setTimeout(updateCampaignViz, 350);
+            setTimeout(updateAllMiniCharts, 450);
+          });
+        }
+
+        // observe mutations (app.js écrit les valeurs)
+        const ids = ["cApero","cCatalan","cChance","cJeux","kpiTotal","tbodyCampaign","tbodySource","tbodyDevice","tbodyOS","tbodyBrowser","tbodyCountry","tbodyHourly"];
+        const obs = new MutationObserver(() => {
+          updateCampaignViz();
+          updateAllMiniCharts();
+        });
+        ids.forEach(id=>{
           const el = $(id);
           if(el) obs.observe(el, {childList:true, subtree:true, characterData:true});
         });
