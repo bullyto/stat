@@ -19,6 +19,288 @@
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
 
   <link rel="stylesheet" href="./style.css" />
+
+  <!-- ✅ AJOUT: amélioration typo/marketing + composants graphiques (sans toucher style.css) -->
+  <style>
+    :root{
+      --brand0:#071b1f;
+      --brand1:#0b2b31;
+      --brand2:#0e3a41;
+      --ink:#eaf6f8;
+      --muted:rgba(234,246,248,.72);
+      --soft:rgba(234,246,248,.10);
+      --line:rgba(234,246,248,.14);
+      --glow:0 18px 60px rgba(0,0,0,.35);
+      --r:18px;
+    }
+
+    /* Typo: plus premium sans dépendance externe */
+    html,body{
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      letter-spacing:.2px;
+    }
+    .h1{
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+    .sub{
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    /* Rebrand doux sur certains blocs existants (sans casser) */
+    .top{
+      backdrop-filter: blur(8px);
+    }
+    .brand .logo{
+      border-radius: 16px;
+      box-shadow: 0 10px 26px rgba(0,0,0,.35);
+    }
+
+    /* Hero: plus “marketing pro” */
+    .card.hero{
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: var(--glow);
+    }
+    .card.hero::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background:
+        radial-gradient(1200px 380px at 10% 0%, rgba(0,255,210,.12), transparent 55%),
+        radial-gradient(900px 320px at 90% 10%, rgba(0,170,255,.10), transparent 52%),
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
+      pointer-events:none;
+    }
+    .heroTitle{
+      letter-spacing: .8px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .heroText{
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    /* Titres de section (nouveau) */
+    .sectionTitle{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:12px;
+      margin: 10px 0 8px;
+      padding: 0 2px;
+    }
+    .sectionTitle .t{
+      font-weight: 900;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: rgba(234,246,248,.88);
+    }
+    .sectionTitle .k{
+      font-weight: 800;
+      font-size: 12px;
+      color: rgba(234,246,248,.60);
+      white-space: nowrap;
+    }
+
+    /* ✅ Graphiques */
+    .vizGrid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){
+      .vizGrid{ grid-template-columns: 1fr; }
+    }
+
+    .vizCard{
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      padding: 14px;
+      background: rgba(255,255,255,.03);
+    }
+
+    .donutWrap{
+      display:flex;
+      align-items:center;
+      gap: 14px;
+    }
+    .donut{
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      background: conic-gradient(
+        rgba(0,255,210,.85) 0% 25%,
+        rgba(0,170,255,.85) 25% 55%,
+        rgba(255,205,72,.85) 55% 80%,
+        rgba(255,110,110,.85) 80% 100%
+      );
+      position:relative;
+      box-shadow: 0 16px 44px rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.12);
+      flex: 0 0 auto;
+    }
+    .donut::after{
+      content:"";
+      position:absolute;
+      inset: 14px;
+      background: rgba(7,27,31,.92);
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .donutCenter{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      z-index:1;
+      font-weight: 900;
+    }
+    .donutCenter .n{
+      font-size: 18px;
+      letter-spacing:.4px;
+    }
+    .donutCenter .s{
+      font-size: 11px;
+      color: rgba(234,246,248,.60);
+      font-weight: 800;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+    }
+
+    .legend{
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+      width:100%;
+    }
+    .legendRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .legendLeft{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-weight: 850;
+    }
+    .swatch{
+      width:10px; height:10px; border-radius:999px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.25);
+    }
+    .sw1{ background: rgba(0,255,210,.85); }
+    .sw2{ background: rgba(0,170,255,.85); }
+    .sw3{ background: rgba(255,205,72,.85); }
+    .sw4{ background: rgba(255,110,110,.85); }
+    .legendRight{
+      display:flex; align-items:baseline; gap:10px;
+      color: rgba(234,246,248,.75);
+      font-weight: 850;
+      white-space:nowrap;
+    }
+    .legendRight b{ color: rgba(234,246,248,.95); }
+
+    .bars{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+    .barRow{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+    }
+    .barTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      font-weight: 900;
+    }
+    .barTop .name{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+    }
+    .pillMini{
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: rgba(234,246,248,.78);
+    }
+    .track{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .fill{
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(0,255,210,.85), rgba(0,170,255,.85));
+      box-shadow: 0 10px 26px rgba(0,0,0,.25);
+      transition: width .35s ease;
+    }
+
+    /* Comparaisons */
+    .compareGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){
+      .compareGrid{ grid-template-columns: 1fr; }
+    }
+    .compareLine{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+    }
+    .compareLine .l{
+      color: rgba(234,246,248,.75);
+      font-weight: 850;
+    }
+    .compareLine .r{
+      font-weight: 950;
+      letter-spacing:.3px;
+    }
+    .mutedNote{
+      color: rgba(234,246,248,.60);
+      font-weight: 750;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+  </style>
 </head>
 <body>
   <div class="bg"></div>
@@ -61,6 +343,9 @@
       <div class="heroTitle">APERO DE NUIT 66</div>
       <div class="heroText">
         <b>stat.aperos.net</b> • stats globales + détails (si endpoints disponibles)
+        <div class="mutedNote" style="margin-top:8px">
+          Objectif : comprendre <b>ce qui convertit</b> (campagne + source) et <b>optimiser ton budget</b> (SMS / réseaux / QR).
+        </div>
       </div>
     </div>
 
@@ -82,7 +367,161 @@
       </div>
     </div>
 
+    <!-- ✅ AJOUT: Graphiques & % + Détails/Comparaisons (sans enlever quoi que ce soit) -->
+    <div class="sectionTitle">
+      <div class="t">Graphiques & pourcentages</div>
+      <div class="k">Vue rapide marketing</div>
+    </div>
+
     <div class="grid2">
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Répartition des clics (Campagnes)</div>
+            <div class="sub">Donut + parts (%) + barres (top)</div>
+          </div>
+          <span class="chip">Auto depuis tes stats</span>
+        </div>
+
+        <div class="vizGrid">
+          <div class="vizCard">
+            <div class="donutWrap">
+              <div class="donut" id="donut">
+                <div class="donutCenter">
+                  <div class="n" id="donutTotal">—</div>
+                  <div class="s">clics</div>
+                </div>
+              </div>
+
+              <div class="legend">
+                <div class="legendRow">
+                  <div class="legendLeft"><span class="swatch sw1"></span>Apéro</div>
+                  <div class="legendRight"><b id="pApero">—%</b><span id="vApero">—</span></div>
+                </div>
+                <div class="legendRow">
+                  <div class="legendLeft"><span class="swatch sw2"></span>Catalan</div>
+                  <div class="legendRight"><b id="pCatalan">—%</b><span id="vCatalan">—</span></div>
+                </div>
+                <div class="legendRow">
+                  <div class="legendLeft"><span class="swatch sw3"></span>Chance</div>
+                  <div class="legendRight"><b id="pChance">—%</b><span id="vChance">—</span></div>
+                </div>
+                <div class="legendRow">
+                  <div class="legendLeft"><span class="swatch sw4"></span>Jeux</div>
+                  <div class="legendRight"><b id="pJeux">—%</b><span id="vJeux">—</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mutedNote" style="margin-top:10px">
+              Lecture rapide : plus la part est haute, plus tu dois pousser cette campagne sur tes canaux qui performent (SMS / réseaux / QR).
+            </div>
+          </div>
+
+          <div class="vizCard">
+            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,246,248,.85); margin-bottom:10px;">
+              Top campagnes (barres)
+            </div>
+            <div class="bars">
+              <div class="barRow">
+                <div class="barTop">
+                  <div class="name">Apéro <span class="pillMini" id="miniApero">—%</span></div>
+                  <div id="miniVApero" style="color:rgba(234,246,248,.78); font-weight:900;">—</div>
+                </div>
+                <div class="track"><div class="fill" id="barApero"></div></div>
+              </div>
+
+              <div class="barRow">
+                <div class="barTop">
+                  <div class="name">Catalan <span class="pillMini" id="miniCatalan">—%</span></div>
+                  <div id="miniVCatalan" style="color:rgba(234,246,248,.78); font-weight:900;">—</div>
+                </div>
+                <div class="track"><div class="fill" id="barCatalan"></div></div>
+              </div>
+
+              <div class="barRow">
+                <div class="barTop">
+                  <div class="name">Chance <span class="pillMini" id="miniChance">—%</span></div>
+                  <div id="miniVChance" style="color:rgba(234,246,248,.78); font-weight:900;">—</div>
+                </div>
+                <div class="track"><div class="fill" id="barChance"></div></div>
+              </div>
+
+              <div class="barRow">
+                <div class="barTop">
+                  <div class="name">Jeux <span class="pillMini" id="miniJeux">—%</span></div>
+                  <div id="miniVJeux" style="color:rgba(234,246,248,.78); font-weight:900;">—</div>
+                </div>
+                <div class="track"><div class="fill" id="barJeux"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Niveau de détail & comparaison</div>
+            <div class="sub">Score marketing : classement + ratio + lecture rapide</div>
+          </div>
+          <span class="chip">Comparatif live</span>
+        </div>
+
+        <div class="compareGrid">
+          <div class="vizCard">
+            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,246,248,.85); margin-bottom:10px;">
+              Classement campagnes
+            </div>
+
+            <div class="compareLine">
+              <div class="l">#1</div>
+              <div class="r" id="rank1">—</div>
+            </div>
+            <div class="compareLine">
+              <div class="l">#2</div>
+              <div class="r" id="rank2">—</div>
+            </div>
+            <div class="compareLine">
+              <div class="l">#3</div>
+              <div class="r" id="rank3">—</div>
+            </div>
+            <div class="compareLine">
+              <div class="l">#4</div>
+              <div class="r" id="rank4">—</div>
+            </div>
+
+            <div class="mutedNote" style="margin-top:10px">
+              Astuce : mets en avant le #1 dans tes messages (CTA + lien) et garde #2 comme variante A/B.
+            </div>
+          </div>
+
+          <div class="vizCard">
+            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,246,248,.85); margin-bottom:10px;">
+              Ratio & lecture rapide
+            </div>
+
+            <div class="compareLine">
+              <div class="l">Total campagnes (somme)</div>
+              <div class="r" id="sumCampaigns">—</div>
+            </div>
+            <div class="compareLine">
+              <div class="l">Total global (kpi)</div>
+              <div class="r" id="kpiGlobalEcho">—</div>
+            </div>
+            <div class="compareLine">
+              <div class="l">Couverture suivie</div>
+              <div class="r" id="coverage">—%</div>
+            </div>
+
+            <div class="mutedNote" style="margin-top:10px">
+              “Couverture suivie” = part du total global attribuée à tes 4 campagnes (utile si tu as d’autres routes/endpoints).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ TON CONTENU ORIGINAL CONTINUE TEL QUEL -->
       <div class="card">
         <div class="cardHead">
           <div>
@@ -281,5 +720,136 @@
   </div>
 
   <script src="./app.js"></script>
+
+  <!-- ✅ AJOUT: calcule % / donut / barres depuis tes valeurs existantes -->
+  <script>
+    (function(){
+      const $ = (id) => document.getElementById(id);
+
+      function toInt(txt){
+        if(!txt) return 0;
+        const n = String(txt).replace(/[^\d]/g,'');
+        return n ? parseInt(n,10) : 0;
+      }
+
+      function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+
+      function setText(id, val){
+        const el = $(id);
+        if(el) el.textContent = val;
+      }
+
+      function setPct(id, pct){
+        const el = $(id);
+        if(el) el.textContent = (isFinite(pct) ? pct.toFixed(0) : 0) + "%";
+      }
+
+      function setBar(id, pct){
+        const el = $(id);
+        if(el) el.style.width = clamp(pct,0,100).toFixed(2) + "%";
+      }
+
+      function paintDonut(pcts){
+        // pcts = [apero,catalan,chance,jeux] somme ~100
+        const el = $("donut");
+        if(!el) return;
+        let a = 0;
+        const stops = [];
+        const colors = [
+          "rgba(0,255,210,.85)",
+          "rgba(0,170,255,.85)",
+          "rgba(255,205,72,.85)",
+          "rgba(255,110,110,.85)"
+        ];
+        for(let i=0;i<4;i++){
+          const b = a + (isFinite(pcts[i]) ? pcts[i] : 0);
+          stops.push(`${colors[i]} ${a.toFixed(2)}% ${b.toFixed(2)}%`);
+          a = b;
+        }
+        // si pas de data -> fallback gris doux
+        if(a <= 0.01){
+          el.style.background = "conic-gradient(rgba(255,255,255,.10) 0% 100%)";
+        }else{
+          el.style.background = `conic-gradient(${stops.join(",")})`;
+        }
+      }
+
+      function updateViz(){
+        // valeurs campagnes
+        const vA = toInt($("cApero")?.textContent);
+        const vC = toInt($("cCatalan")?.textContent);
+        const vCh = toInt($("cChance")?.textContent);
+        const vJ = toInt($("cJeux")?.textContent);
+
+        const sum = vA + vC + vCh + vJ;
+
+        // total global si dispo
+        const kpiTotal = toInt($("kpiTotal")?.textContent);
+
+        setText("donutTotal", sum ? String(sum) : (kpiTotal ? String(kpiTotal) : "—"));
+
+        // parts %
+        const pA = sum ? (vA/sum*100) : 0;
+        const pC = sum ? (vC/sum*100) : 0;
+        const pCh = sum ? (vCh/sum*100) : 0;
+        const pJ = sum ? (vJ/sum*100) : 0;
+
+        setPct("pApero", pA); setText("vApero", vA ? String(vA) : "—");
+        setPct("pCatalan", pC); setText("vCatalan", vC ? String(vC) : "—");
+        setPct("pChance", pCh); setText("vChance", vCh ? String(vCh) : "—");
+        setPct("pJeux", pJ); setText("vJeux", vJ ? String(vJ) : "—");
+
+        setPct("miniApero", pA); setText("miniVApero", vA ? String(vA) : "—"); setBar("barApero", pA);
+        setPct("miniCatalan", pC); setText("miniVCatalan", vC ? String(vC) : "—"); setBar("barCatalan", pC);
+        setPct("miniChance", pCh); setText("miniVChance", vCh ? String(vCh) : "—"); setBar("barChance", pCh);
+        setPct("miniJeux", pJ); setText("miniVJeux", vJ ? String(vJ) : "—"); setBar("barJeux", pJ);
+
+        paintDonut([pA,pC,pCh,pJ]);
+
+        // ranking
+        const items = [
+          {name:"Apéro", v:vA, p:pA},
+          {name:"Catalan", v:vC, p:pC},
+          {name:"Chance", v:vCh, p:pCh},
+          {name:"Jeux", v:vJ, p:pJ},
+        ].sort((x,y)=> (y.v - x.v));
+
+        setText("rank1", items[0].v ? `${items[0].name} • ${items[0].v} (${items[0].p.toFixed(0)}%)` : "—");
+        setText("rank2", items[1].v ? `${items[1].name} • ${items[1].v} (${items[1].p.toFixed(0)}%)` : "—");
+        setText("rank3", items[2].v ? `${items[2].name} • ${items[2].v} (${items[2].p.toFixed(0)}%)` : "—");
+        setText("rank4", items[3].v ? `${items[3].name} • ${items[3].v} (${items[3].p.toFixed(0)}%)` : "—");
+
+        setText("sumCampaigns", sum ? String(sum) : "—");
+        setText("kpiGlobalEcho", kpiTotal ? String(kpiTotal) : "—");
+        const cov = (kpiTotal && sum) ? (sum/kpiTotal*100) : 0;
+        setText("coverage", (kpiTotal && sum) ? cov.toFixed(0) + "%" : "—%");
+      }
+
+      // met à jour après chargement + sur refresh + quand DOM change
+      function boot(){
+        updateViz();
+
+        // click refresh -> recalcul après le fetch
+        const btn = $("btnRefresh");
+        if(btn){
+          btn.addEventListener("click", () => setTimeout(updateViz, 350));
+        }
+
+        // observer si app.js réécrit les valeurs
+        const watchIds = ["cApero","cCatalan","cChance","cJeux","kpiTotal","tbodyCampaign"];
+        const obs = new MutationObserver(() => updateViz());
+        watchIds.forEach(id=>{
+          const el = $(id);
+          if(el) obs.observe(el, {childList:true, subtree:true, characterData:true});
+        });
+      }
+
+      if(document.readyState === "loading"){
+        document.addEventListener("DOMContentLoaded", boot);
+      }else{
+        boot();
+      }
+    })();
+  </script>
 </body>
 </html>
