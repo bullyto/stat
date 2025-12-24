@@ -1,5 +1,5 @@
 /* Stats ADN66 - Service Worker (cache app shell, network for API) */
-const CACHE = "adn66-stats-v2";
+const CACHE = "stats-v2";
 const SHELL = [
   "./",
   "./index.html",
