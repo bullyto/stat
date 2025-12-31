@@ -438,6 +438,18 @@
         <div class="kpiValue" id="kpiCampaigns">—</div>
         <div class="kpiHint">apero • catalan • chance • jeux</div>
       </div>
+
+      <!-- ✅ NOUVEAU KPI : events -->
+      <div class="card kpi">
+        <div class="kpiLabel">Events total</div>
+        <div class="kpiValue" id="kpiEventsTotal">—</div>
+        <div class="kpiHint">Trackings fins</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpiLabel">Events aujourd’hui</div>
+        <div class="kpiValue" id="kpiEventsToday">—</div>
+        <div class="kpiHint">Aujourd’hui (local)</div>
+      </div>
     </div>
 
     <!-- ✅ AJOUT: Graphiques & % -->
@@ -572,6 +584,75 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- ✅ NOUVEAU : Trackings fins (events) -->
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Trackings (détails)</div>
+            <div class="sub">Tes 17 événements : appels, commande, âge, roue, canaux…</div>
+          </div>
+          <span class="chip">events.byEvent</span>
+        </div>
+        <div class="tableWrap">
+          <table class="table small">
+            <thead><tr><th>Événement</th><th class="right">Clics</th></tr></thead>
+            <tbody id="tbodyEvent"></tbody>
+          </table>
+        </div>
+        <div id="vizEvent" class="miniViz"></div>
+      </div>
+
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Marques</div>
+            <div class="sub">apero_nuit / apero_catalan / hibair / wheel</div>
+          </div>
+          <span class="chip">events.byBrand</span>
+        </div>
+        <div class="tableWrap">
+          <table class="table small">
+            <thead><tr><th>Marque</th><th class="right">Clics</th></tr></thead>
+            <tbody id="tbodyBrand"></tbody>
+          </table>
+        </div>
+        <div id="vizBrand" class="miniViz"></div>
+      </div>
+
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Canaux</div>
+            <div class="sub">site / facebook / sms / qr / app</div>
+          </div>
+          <span class="chip">events.byChannel</span>
+        </div>
+        <div class="tableWrap">
+          <table class="table small">
+            <thead><tr><th>Canal</th><th class="right">Clics</th></tr></thead>
+            <tbody id="tbodyChannel"></tbody>
+          </table>
+        </div>
+        <div id="vizChannel" class="miniViz"></div>
+      </div>
+
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Actions</div>
+            <div class="sub">click / call / order / age_accept / age_refuse…</div>
+          </div>
+          <span class="chip">events.byAction</span>
+        </div>
+        <div class="tableWrap">
+          <table class="table small">
+            <thead><tr><th>Action</th><th class="right">Clics</th></tr></thead>
+            <tbody id="tbodyAction"></tbody>
+          </table>
+        </div>
+        <div id="vizAction" class="miniViz"></div>
       </div>
 
       <!-- ✅ TON CODE ORIGINAL (inchangé) -->
@@ -934,6 +1015,12 @@
         renderMiniViz("vizBrowser", parseTableBody("tbodyBrowser"), {hint:"Chrome / Safari / Edge… (top + autres)"});
         renderMiniViz("vizCountry", parseTableBody("tbodyCountry"), {hint:"Pays (top + autres)"});
         renderMiniViz("vizHourly",  parseTableBody("tbodyHourly"),  {hint:"Distribution aujourd’hui par heure (top + autres)"});
+
+        /* ✅ NOUVEAU: miniViz pour events */
+        renderMiniViz("vizEvent",   parseTableBody("tbodyEvent"),   {hint:"Trackings (événements) — top + autres"});
+        renderMiniViz("vizBrand",   parseTableBody("tbodyBrand"),   {hint:"Répartition par marque"});
+        renderMiniViz("vizChannel", parseTableBody("tbodyChannel"), {hint:"Répartition par canal"});
+        renderMiniViz("vizAction",  parseTableBody("tbodyAction"),  {hint:"Répartition par action (call/order/âge…)"});
       }
 
       function boot(){
@@ -950,7 +1037,12 @@
         }
 
         // observe mutations (app.js écrit les valeurs)
-        const ids = ["cApero","cCatalan","cChance","cJeux","kpiTotal","tbodyCampaign","tbodySource","tbodyDevice","tbodyOS","tbodyBrowser","tbodyCountry","tbodyHourly"];
+        const ids = [
+          "cApero","cCatalan","cChance","cJeux","kpiTotal",
+          "tbodyCampaign","tbodySource","tbodyDevice","tbodyOS","tbodyBrowser","tbodyCountry","tbodyHourly",
+          /* ✅ NOUVEAU */
+          "tbodyEvent","tbodyBrand","tbodyChannel","tbodyAction"
+        ];
         const obs = new MutationObserver(() => {
           updateCampaignViz();
           updateAllMiniCharts();
