@@ -15,29 +15,34 @@
 
   <!-- PWA -->
   <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" href="./assets/icon-192.png" />
-  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="icon" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
 
   <link rel="stylesheet" href="./style.css" />
 
-  <!-- ✅ AJOUTS (sans toucher style.css) : typo + marketing pro + thème bleu nuit + graphiques -->
   <style>
     :root{
-      /* ✅ ADN Apéro de Nuit 66 : bleu nuit sombre */
-      --brand0:#040a14;   /* fond le plus sombre */
-      --brand1:#061425;   /* fond principal */
-      --brand2:#0a2342;   /* accent bleu nuit */
+      --brand0:#040a14;
+      --brand1:#061425;
+      --brand2:#0a2342;
       --ink:#eaf2ff;
       --muted:rgba(234,242,255,.72);
-      --soft:rgba(234,242,255,.10);
       --line:rgba(234,242,255,.14);
       --glow:0 18px 60px rgba(0,0,0,.45);
       --r:18px;
 
-      /* accents “bleu électrique” */
-      --accentA: rgba(0,170,255,.92);
-      --accentB: rgba(0,120,255,.88);
-      --accentC: rgba(0,255,210,.70);
+      /* accents */
+      --blueA: rgba(0,170,255,.92);
+      --blueB: rgba(0,120,255,.88);
+
+      --yellowA: rgba(255,210,0,.92);
+      --yellowB: rgba(255,160,0,.85);
+
+      --greenA: rgba(0,255,150,.75);
+      --greenB: rgba(0,200,120,.70);
+
+      --violetA: rgba(180,120,255,.85);
+      --violetB: rgba(120,90,255,.80);
     }
 
     html,body{
@@ -49,7 +54,6 @@
       color: var(--ink) !important;
     }
 
-    /* ✅ Si ta .bg existe déjà, on la renforce en bleu nuit */
     .bg{
       background:
         radial-gradient(1200px 460px at 10% 0%, rgba(0,170,255,.14), transparent 55%),
@@ -58,24 +62,11 @@
         linear-gradient(180deg, var(--brand0), var(--brand1)) !important;
     }
 
-    /* Typo premium */
-    .h1{
-      letter-spacing:.6px;
-      text-transform: uppercase;
-      font-weight: 800;
-    }
-    .sub{
-      color: var(--muted);
-      font-weight: 600;
-    }
-
+    .h1{ letter-spacing:.6px; text-transform: uppercase; font-weight: 800; }
+    .sub{ color: var(--muted); font-weight: 600; }
     .top{ backdrop-filter: blur(8px); }
-    .brand .logo{
-      border-radius: 16px;
-      box-shadow: 0 10px 26px rgba(0,0,0,.35);
-    }
+    .brand .logo{ border-radius: 16px; box-shadow: 0 10px 26px rgba(0,0,0,.35); }
 
-    /* ✅ KPI : chiffres plus petits + taille identique */
     .kpiValue{
       font-size: 28px !important;
       line-height: 1.05 !important;
@@ -87,7 +78,6 @@
       .kpiValue{ font-size: 24px !important; }
     }
 
-    /* Hero plus marketing */
     .card.hero{
       position: relative;
       overflow: hidden;
@@ -103,15 +93,8 @@
         linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
       pointer-events:none;
     }
-    .heroTitle{
-      letter-spacing: .8px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-    .heroText{
-      color: var(--muted);
-      font-weight: 650;
-    }
+    .heroTitle{ letter-spacing:.8px; font-weight:900; text-transform: uppercase; }
+    .heroText{ color: var(--muted); font-weight: 650; }
     .mutedNote{
       color: rgba(234,242,255,.60);
       font-weight: 750;
@@ -119,19 +102,17 @@
       line-height: 1.25;
     }
 
-    /* Boutons + premium bleu */
     .btn{ border-color: rgba(234,242,255,.16) !important; }
     .btn:not(.ghost){
       background: linear-gradient(180deg, rgba(0,170,255,.18), rgba(0,120,255,.12)) !important;
     }
 
-    /* Titres sections */
     .sectionTitle{
       display:flex;
       align-items:baseline;
       justify-content:space-between;
       gap:12px;
-      margin: 10px 0 8px;
+      margin: 12px 0 8px;
       padding: 0 2px;
     }
     .sectionTitle .t{
@@ -148,176 +129,55 @@
       white-space: nowrap;
     }
 
-    /* ✅ Graphiques principaux */
-    .vizGrid{
-      display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap: 14px;
-    }
-    @media (max-width: 980px){
-      .vizGrid{ grid-template-columns: 1fr; }
-    }
-    .vizCard{
-      border: 1px solid var(--line);
+    /* --- blocs/encarts --- */
+    .block{
       border-radius: var(--r);
-      padding: 14px;
-      background: rgba(255,255,255,.03);
-    }
-
-    .donutWrap{
-      display:flex;
-      align-items:center;
-      gap: 14px;
-    }
-    .donut{
-      width: 112px;
-      height: 112px;
-      border-radius: 50%;
-      background: conic-gradient(
-        rgba(0,170,255,.92) 0% 28%,
-        rgba(0,120,255,.88) 28% 58%,
-        rgba(80,160,255,.70) 58% 82%,
-        rgba(0,255,210,.60) 82% 100%
-      );
-      position:relative;
-      box-shadow: 0 16px 44px rgba(0,0,0,.35);
-      border: 1px solid rgba(255,255,255,.12);
-      flex: 0 0 auto;
-    }
-    .donut::after{
-      content:"";
-      position:absolute;
-      inset: 14px;
-      background: rgba(4,10,20,.92);
-      border-radius: 50%;
       border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      overflow: hidden;
+      box-shadow: var(--glow);
     }
-    .donutCenter{
-      position:absolute;
-      inset:0;
+    .blockHead{
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
       display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-direction:column;
-      z-index:1;
-      font-weight: 900;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
     }
-    .donutCenter .n{ font-size: 18px; letter-spacing:.4px; }
-    .donutCenter .s{
-      font-size: 11px;
-      color: rgba(234,242,255,.60);
-      font-weight: 800;
+    .blockTitle{
+      font-weight: 950;
       letter-spacing:.6px;
       text-transform: uppercase;
-    }
-
-    .legend{
-      display:flex;
-      flex-direction:column;
-      gap: 8px;
-      width:100%;
-    }
-    .legendRow{
+      font-size: 12px;
+      color: rgba(234,242,255,.92);
       display:flex;
       align-items:center;
-      justify-content:space-between;
       gap:10px;
-      padding: 8px 10px;
-      border-radius: 12px;
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(255,255,255,.08);
     }
-    .legendLeft{ display:flex; align-items:center; gap: 10px; font-weight: 850; }
-    .swatch{
+    .badgeDot{
       width:10px; height:10px; border-radius:999px;
       box-shadow: 0 10px 22px rgba(0,0,0,.25);
-    }
-    .sw1{ background: rgba(0,170,255,.92) !important; }
-    .sw2{ background: rgba(0,120,255,.88) !important; }
-    .sw3{ background: rgba(80,160,255,.70) !important; }
-    .sw4{ background: rgba(0,255,210,.60) !important; }
-
-    .legendRight{
-      display:flex; align-items:baseline; gap:10px;
-      color: rgba(234,242,255,.75);
-      font-weight: 850;
-      white-space:nowrap;
-    }
-    .legendRight b{ color: rgba(234,242,255,.95); }
-
-    .bars{ display:flex; flex-direction:column; gap: 10px; }
-    .barRow{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 6px;
-      padding: 10px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.08);
-      background: rgba(255,255,255,.03);
-    }
-    .barTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      font-weight: 900;
-    }
-    .barTop .name{ display:flex; align-items:center; gap: 10px; }
-    .pillMini{
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing:.6px;
-      text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: 999px;
       border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.05);
-      color: rgba(234,242,255,.78);
     }
-    .track{
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      overflow:hidden;
-      border: 1px solid rgba(255,255,255,.10);
-    }
-    .fill{
-      height: 100%;
-      width: 0%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--accentA), var(--accentB)) !important;
-      box-shadow: 0 10px 26px rgba(0,0,0,.25);
-      transition: width .35s ease;
-    }
+    .blockSub{ color: rgba(234,242,255,.70); font-weight: 750; font-size: 12px; margin-top: 4px; }
 
-    /* Comparaisons */
-    .compareGrid{
+    .blockBody{ padding: 14px; }
+
+    .twoCols{
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap: 14px;
     }
     @media (max-width: 980px){
-      .compareGrid{ grid-template-columns: 1fr; }
+      .twoCols{ grid-template-columns: 1fr; }
     }
-    .compareLine{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.08);
-      background: rgba(255,255,255,.03);
-    }
-    .compareLine .l{ color: rgba(234,242,255,.75); font-weight: 850; }
-    .compareLine .r{ font-weight: 950; letter-spacing:.3px; }
 
-    /* ✅ Mini-graph universel pour TOUT (source/device/os/browser/country/hourly) */
     .miniViz{
-      margin-top: 10px;
       display:flex;
       flex-direction:column;
       gap: 10px;
+      margin-top: 10px;
     }
     .miniRow{
       display:grid;
@@ -363,7 +223,6 @@
       height:100%;
       width:0%;
       border-radius:999px;
-      background: linear-gradient(90deg, var(--accentA), var(--accentB));
       transition: width .35s ease;
     }
     .miniHint{
@@ -372,6 +231,42 @@
       color: rgba(234,242,255,.60);
       font-weight: 750;
     }
+
+    /* palettes par thème */
+    .t-nuit .badgeDot{ background: var(--blueA); }
+    .t-catalan .badgeDot{ background: var(--yellowA); }
+    .t-wheel .badgeDot{ background: var(--greenA); }
+    .t-hibair .badgeDot{ background: var(--violetA); }
+
+    .t-nuit .miniFill{ background: linear-gradient(90deg, var(--blueA), var(--blueB)); }
+    .t-catalan .miniFill{ background: linear-gradient(90deg, var(--yellowA), var(--yellowB)); }
+    .t-wheel .miniFill{ background: linear-gradient(90deg, var(--greenA), var(--greenB)); }
+    .t-hibair .miniFill{ background: linear-gradient(90deg, var(--violetA), var(--violetB)); }
+
+    .pillKpi{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .pillKpi .l{ color: rgba(234,242,255,.72); font-weight: 850; }
+    .pillKpi .r{ font-weight: 950; letter-spacing:.3px; }
+
+    .gridBottom{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){
+      .gridBottom{ grid-template-columns: 1fr; }
+    }
+
+    /* tables existantes (on ne touche pas style.css, juste confort) */
+    .tableWrap{ margin-top: 8px; }
   </style>
 </head>
 
@@ -380,7 +275,7 @@
 
   <div class="top">
     <div class="brand">
-      <img class="logo" src="./assets/icon-192.png" alt="Logo" />
+      <img class="logo" src="./icon-192.png" alt="Logo" />
       <div>
         <div class="h1">Stats</div>
         <div class="sub">Dashboard marketing • suivi des clics</div>
@@ -415,18 +310,19 @@
     <div class="card hero">
       <div class="heroTitle">APERO DE NUIT 66</div>
       <div class="heroText">
-        <b>stat.aperos.net</b> • stats globales + détails (si endpoints disponibles)
+        <b>stat.aperos.net</b> • stats globales + détails (events)
         <div class="mutedNote" style="margin-top:8px">
-          Objectif : comprendre <b>ce qui convertit</b> (campagne + source) et <b>optimiser ton budget</b> (SMS / réseaux / QR).
+          Objectif : comparer Apéro de Nuit vs Apéro Catalan + suivre les actions clés (appel, commande, âge, roue, hibair).
         </div>
       </div>
     </div>
 
+    <!-- KPIs globaux (inchangés + events) -->
     <div class="grid">
       <div class="card kpi">
         <div class="kpiLabel">Clics total</div>
         <div class="kpiValue" id="kpiTotal">—</div>
-        <div class="kpiHint">Tous canaux confondus</div>
+        <div class="kpiHint">Table clicks (campagnes)</div>
       </div>
       <div class="card kpi">
         <div class="kpiLabel">Aujourd’hui</div>
@@ -439,11 +335,10 @@
         <div class="kpiHint">apero • catalan • chance • jeux</div>
       </div>
 
-      <!-- ✅ NOUVEAU KPI : events -->
       <div class="card kpi">
         <div class="kpiLabel">Events total</div>
         <div class="kpiValue" id="kpiEventsTotal">—</div>
-        <div class="kpiHint">Trackings fins</div>
+        <div class="kpiHint">Actions & canaux fins</div>
       </div>
       <div class="card kpi">
         <div class="kpiLabel">Events aujourd’hui</div>
@@ -452,217 +347,161 @@
       </div>
     </div>
 
-    <!-- ✅ AJOUT: Graphiques & % -->
+    <!-- 1) Comparatif global Nuit vs Catalan -->
     <div class="sectionTitle">
-      <div class="t">Graphiques & pourcentages</div>
-      <div class="k">Vue rapide marketing</div>
+      <div class="t">Comparatif</div>
+      <div class="k">Apéro de Nuit vs Apéro Catalan</div>
+    </div>
+
+    <div class="block">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot" style="background:rgba(255,255,255,.35)"></span> Clics total : Nuit vs Catalan</div>
+          <div class="blockSub">Basé sur tes events (brand = apero_nuit / apero_catalan)</div>
+        </div>
+        <span class="chip">events.byBrand</span>
+      </div>
+      <div class="blockBody">
+        <div class="twoCols">
+          <div class="pillKpi">
+            <div class="l">Apéro de Nuit 66</div>
+            <div class="r" id="kpiBrandNuit">—</div>
+          </div>
+          <div class="pillKpi">
+            <div class="l">Apéro Catalan</div>
+            <div class="r" id="kpiBrandCatalan">—</div>
+          </div>
+        </div>
+
+        <div class="twoCols" style="margin-top:14px;">
+          <div class="miniViz t-nuit" id="vizBrandNuit"></div>
+          <div class="miniViz t-catalan" id="vizBrandCatalan"></div>
+        </div>
+        <div class="miniHint" style="margin-top:8px">
+          Astuce : si Nuit est devant, pousse SMS/QR du côté qui “convertit”. Si Catalan monte, mets-le plus visible sur tes supports.
+        </div>
+      </div>
+    </div>
+
+    <!-- 2) Encart Apéro de Nuit (bleu) -->
+    <div class="sectionTitle">
+      <div class="t">Apéro de Nuit 66</div>
+      <div class="k">Bleu • canaux + actions + âge</div>
+    </div>
+
+    <div class="block t-nuit">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot"></span> Apéro de Nuit 66</div>
+          <div class="blockSub">site / facebook / sms / qr / app + appeler + commander + âge</div>
+        </div>
+        <span class="chip">events.byEvent</span>
+      </div>
+      <div class="blockBody">
+        <div class="twoCols">
+          <div>
+            <div class="pillKpi"><div class="l">Total Nuit (events)</div><div class="r" id="kpiNuitTotal">—</div></div>
+            <div class="miniViz t-nuit" id="vizNuitChannels"></div>
+          </div>
+
+          <div>
+            <div class="pillKpi"><div class="l">Actions Nuit</div><div class="r" id="kpiNuitActions">—</div></div>
+            <div class="miniViz t-nuit" id="vizNuitActions"></div>
+          </div>
+        </div>
+
+        <!-- Âge Oui / Non à la fin de l'encart -->
+        <div style="margin-top:14px;">
+          <div class="pillKpi"><div class="l">Âge (Nuit) — Oui / Non</div><div class="r" id="kpiNuitAge">—</div></div>
+          <div class="miniViz t-nuit" id="vizNuitAge"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3) Encart Apéro Catalan (jaune) -->
+    <div class="sectionTitle">
+      <div class="t">Apéro Catalan</div>
+      <div class="k">Jaune • actions + âge</div>
+    </div>
+
+    <div class="block t-catalan">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot"></span> Apéro Catalan</div>
+          <div class="blockSub">appeler + âge (accept/refuse) + (si tu ajoutes des canaux plus tard, ça suivra)</div>
+        </div>
+        <span class="chip">events.byEvent</span>
+      </div>
+      <div class="blockBody">
+        <div class="twoCols">
+          <div>
+            <div class="pillKpi"><div class="l">Total Catalan (events)</div><div class="r" id="kpiCatalanTotal">—</div></div>
+            <div class="miniViz t-catalan" id="vizCatalanActions"></div>
+          </div>
+
+          <div>
+            <div class="pillKpi"><div class="l">Âge (Catalan) — Oui / Non</div><div class="r" id="kpiCatalanAge">—</div></div>
+            <div class="miniViz t-catalan" id="vizCatalanAge"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4) Roue de la fortune -->
+    <div class="sectionTitle">
+      <div class="t">Roue de la fortune</div>
+      <div class="k">Vert • performance SMS</div>
+    </div>
+
+    <div class="block t-wheel">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot"></span> Roue de la fortune</div>
+          <div class="blockSub">Suivi : wheel.sms.click</div>
+        </div>
+        <span class="chip">wheel</span>
+      </div>
+      <div class="blockBody">
+        <div class="pillKpi"><div class="l">Total roue</div><div class="r" id="kpiWheelTotal">—</div></div>
+        <div class="miniViz t-wheel" id="vizWheel"></div>
+      </div>
+    </div>
+
+    <!-- 5) Hibair Drink -->
+    <div class="sectionTitle">
+      <div class="t">Hibair Drink</div>
+      <div class="k">Violet • canaux</div>
+    </div>
+
+    <div class="block t-hibair">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot"></span> Hibair Drink</div>
+          <div class="blockSub">facebook / sms / qr / application</div>
+        </div>
+        <span class="chip">hibair</span>
+      </div>
+      <div class="blockBody">
+        <div class="pillKpi"><div class="l">Total Hibair</div><div class="r" id="kpiHibairTotal">—</div></div>
+        <div class="miniViz t-hibair" id="vizHibair"></div>
+      </div>
+    </div>
+
+    <!-- 6) Bas : le reste (campagnes / sources / devices / os / browser / hourly / last) -->
+    <div class="sectionTitle">
+      <div class="t">Détails</div>
+      <div class="k">Tech & lecture fine</div>
     </div>
 
     <div class="grid2">
+      <!-- Campagnes (table clicks classique) -->
       <div class="card">
         <div class="cardHead">
           <div>
-            <div class="cardTitle">Répartition des clics (Campagnes)</div>
-            <div class="sub">Donut + parts (%) + barres (top)</div>
+            <div class="cardTitle">Campagnes (table clicks)</div>
+            <div class="sub">apero / catalan / chance / jeux</div>
           </div>
-          <span class="chip">Auto depuis tes stats</span>
-        </div>
-
-        <div class="vizGrid">
-          <div class="vizCard">
-            <div class="donutWrap">
-              <div class="donut" id="donut">
-                <div class="donutCenter">
-                  <div class="n" id="donutTotal">—</div>
-                  <div class="s">clics</div>
-                </div>
-              </div>
-
-              <div class="legend">
-                <div class="legendRow">
-                  <div class="legendLeft"><span class="swatch sw1"></span>Apéro</div>
-                  <div class="legendRight"><b id="pApero">—%</b><span id="vApero">—</span></div>
-                </div>
-                <div class="legendRow">
-                  <div class="legendLeft"><span class="swatch sw2"></span>Catalan</div>
-                  <div class="legendRight"><b id="pCatalan">—%</b><span id="vCatalan">—</span></div>
-                </div>
-                <div class="legendRow">
-                  <div class="legendLeft"><span class="swatch sw3"></span>Chance</div>
-                  <div class="legendRight"><b id="pChance">—%</b><span id="vChance">—</span></div>
-                </div>
-                <div class="legendRow">
-                  <div class="legendLeft"><span class="swatch sw4"></span>Jeux</div>
-                  <div class="legendRight"><b id="pJeux">—%</b><span id="vJeux">—</span></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mutedNote" style="margin-top:10px">
-              Lecture rapide : plus la part est haute, plus tu dois pousser cette campagne sur tes canaux qui performent (SMS / réseaux / QR).
-            </div>
-          </div>
-
-          <div class="vizCard">
-            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,242,255,.85); margin-bottom:10px;">
-              Top campagnes (barres)
-            </div>
-            <div class="bars">
-              <div class="barRow">
-                <div class="barTop">
-                  <div class="name">Apéro <span class="pillMini" id="miniApero">—%</span></div>
-                  <div id="miniVApero" style="color:rgba(234,242,255,.78); font-weight:900;">—</div>
-                </div>
-                <div class="track"><div class="fill" id="barApero"></div></div>
-              </div>
-
-              <div class="barRow">
-                <div class="barTop">
-                  <div class="name">Catalan <span class="pillMini" id="miniCatalan">—%</span></div>
-                  <div id="miniVCatalan" style="color:rgba(234,242,255,.78); font-weight:900;">—</div>
-                </div>
-                <div class="track"><div class="fill" id="barCatalan"></div></div>
-              </div>
-
-              <div class="barRow">
-                <div class="barTop">
-                  <div class="name">Chance <span class="pillMini" id="miniChance">—%</span></div>
-                  <div id="miniVChance" style="color:rgba(234,242,255,.78); font-weight:900;">—</div>
-                </div>
-                <div class="track"><div class="fill" id="barChance"></div></div>
-              </div>
-
-              <div class="barRow">
-                <div class="barTop">
-                  <div class="name">Jeux <span class="pillMini" id="miniJeux">—%</span></div>
-                  <div id="miniVJeux" style="color:rgba(234,242,255,.78); font-weight:900;">—</div>
-                </div>
-                <div class="track"><div class="fill" id="barJeux"></div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ✅ AJOUT: Détails & comparaisons -->
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Niveau de détail & comparaison</div>
-            <div class="sub">Score marketing : classement + ratio + lecture rapide</div>
-          </div>
-          <span class="chip">Comparatif live</span>
-        </div>
-
-        <div class="compareGrid">
-          <div class="vizCard">
-            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,242,255,.85); margin-bottom:10px;">
-              Classement campagnes
-            </div>
-
-            <div class="compareLine"><div class="l">#1</div><div class="r" id="rank1">—</div></div>
-            <div class="compareLine"><div class="l">#2</div><div class="r" id="rank2">—</div></div>
-            <div class="compareLine"><div class="l">#3</div><div class="r" id="rank3">—</div></div>
-            <div class="compareLine"><div class="l">#4</div><div class="r" id="rank4">—</div></div>
-
-            <div class="mutedNote" style="margin-top:10px">
-              Astuce : mets en avant le #1 dans tes messages (CTA + lien) et garde #2 comme variante A/B.
-            </div>
-          </div>
-
-          <div class="vizCard">
-            <div style="font-weight:950; letter-spacing:.4px; text-transform:uppercase; font-size:12px; color:rgba(234,242,255,.85); margin-bottom:10px;">
-              Ratio & lecture rapide
-            </div>
-
-            <div class="compareLine"><div class="l">Total campagnes (somme)</div><div class="r" id="sumCampaigns">—</div></div>
-            <div class="compareLine"><div class="l">Total global (kpi)</div><div class="r" id="kpiGlobalEcho">—</div></div>
-            <div class="compareLine"><div class="l">Couverture suivie</div><div class="r" id="coverage">—%</div></div>
-
-            <div class="mutedNote" style="margin-top:10px">
-              “Couverture suivie” = part du total global attribuée à tes 4 campagnes (utile si tu as d’autres routes/endpoints).
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ✅ NOUVEAU : Trackings fins (events) -->
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Trackings (détails)</div>
-            <div class="sub">Tes 17 événements : appels, commande, âge, roue, canaux…</div>
-          </div>
-          <span class="chip">events.byEvent</span>
-        </div>
-        <div class="tableWrap">
-          <table class="table small">
-            <thead><tr><th>Événement</th><th class="right">Clics</th></tr></thead>
-            <tbody id="tbodyEvent"></tbody>
-          </table>
-        </div>
-        <div id="vizEvent" class="miniViz"></div>
-      </div>
-
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Marques</div>
-            <div class="sub">apero_nuit / apero_catalan / hibair / wheel</div>
-          </div>
-          <span class="chip">events.byBrand</span>
-        </div>
-        <div class="tableWrap">
-          <table class="table small">
-            <thead><tr><th>Marque</th><th class="right">Clics</th></tr></thead>
-            <tbody id="tbodyBrand"></tbody>
-          </table>
-        </div>
-        <div id="vizBrand" class="miniViz"></div>
-      </div>
-
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Canaux</div>
-            <div class="sub">site / facebook / sms / qr / app</div>
-          </div>
-          <span class="chip">events.byChannel</span>
-        </div>
-        <div class="tableWrap">
-          <table class="table small">
-            <thead><tr><th>Canal</th><th class="right">Clics</th></tr></thead>
-            <tbody id="tbodyChannel"></tbody>
-          </table>
-        </div>
-        <div id="vizChannel" class="miniViz"></div>
-      </div>
-
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Actions</div>
-            <div class="sub">click / call / order / age_accept / age_refuse…</div>
-          </div>
-          <span class="chip">events.byAction</span>
-        </div>
-        <div class="tableWrap">
-          <table class="table small">
-            <thead><tr><th>Action</th><th class="right">Clics</th></tr></thead>
-            <tbody id="tbodyAction"></tbody>
-          </table>
-        </div>
-        <div id="vizAction" class="miniViz"></div>
-      </div>
-
-      <!-- ✅ TON CODE ORIGINAL (inchangé) -->
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Campagnes</div>
-            <div class="sub">Tri : le plus cliqué en premier</div>
-          </div>
-          <span class="chip">Nom exact : apero / catalan / chance / jeux</span>
+          <span class="chip">clicks.byCampaign</span>
         </div>
 
         <div class="campaignCards">
@@ -716,16 +555,17 @@
             <tbody id="tbodyCampaign"></tbody>
           </table>
         </div>
-        <div class="hint">Tip : utilise des sources propres (ex : <b>facebook</b>, <b>sms</b>, <b>qr</b>, <b>direct</b>)</div>
+        <div class="hint">Tip : src propre (facebook / sms / qr / direct)</div>
       </div>
 
+      <!-- Source -->
       <div class="card">
         <div class="cardHead">
           <div>
             <div class="cardTitle">Origines (source)</div>
-            <div class="sub">⚠️ s’affiche seulement si l’API renvoie bySource</div>
+            <div class="sub">sms / facebook / qr / direct…</div>
           </div>
-          <span class="chip">direct / facebook / sms / qr…</span>
+          <span class="chip">bySource</span>
         </div>
         <div class="tableWrap">
           <table class="table small">
@@ -733,107 +573,88 @@
             <tbody id="tbodySource"></tbody>
           </table>
         </div>
-        <!-- ✅ graph auto ici -->
         <div id="vizSource" class="miniViz"></div>
       </div>
 
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Appareils</div>
-            <div class="sub">mobile / desktop</div>
+      <!-- Devices / OS / Browser (sans Pays) -->
+      <div class="gridBottom">
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <div class="cardTitle">Appareils</div>
+              <div class="sub">mobile / desktop</div>
+            </div>
+            <span class="chip">Device</span>
           </div>
-          <span class="chip">Device</span>
+          <div class="tableWrap">
+            <table class="table small">
+              <thead><tr><th>Appareil</th><th class="right">Clics</th></tr></thead>
+              <tbody id="tbodyDevice"></tbody>
+            </table>
+          </div>
+          <div id="vizDevice" class="miniViz"></div>
         </div>
-        <div class="tableWrap">
-          <table class="table small">
-            <thead><tr><th>Appareil</th><th class="right">Clics</th></tr></thead>
-            <tbody id="tbodyDevice"></tbody>
-          </table>
+
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <div class="cardTitle">Systèmes</div>
+              <div class="sub">Android / iOS / Windows / macOS…</div>
+            </div>
+            <span class="chip">OS</span>
+          </div>
+          <div class="tableWrap">
+            <table class="table small">
+              <thead><tr><th>OS</th><th class="right">Clics</th></tr></thead>
+              <tbody id="tbodyOS"></tbody>
+            </table>
+          </div>
+          <div id="vizOS" class="miniViz"></div>
         </div>
-        <!-- ✅ graph auto ici -->
-        <div id="vizDevice" class="miniViz"></div>
+
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <div class="cardTitle">Navigateurs</div>
+              <div class="sub">Chrome / Safari / Edge…</div>
+            </div>
+            <span class="chip">Browser</span>
+          </div>
+          <div class="tableWrap">
+            <table class="table small">
+              <thead><tr><th>Navigateur</th><th class="right">Clics</th></tr></thead>
+              <tbody id="tbodyBrowser"></tbody>
+            </table>
+          </div>
+          <div id="vizBrowser" class="miniViz"></div>
+        </div>
+
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <div class="cardTitle">Clics par heure (aujourd’hui)</div>
+              <div class="sub">si hourly est renvoyé</div>
+            </div>
+            <span class="chip">Heure locale</span>
+          </div>
+          <div class="tableWrap">
+            <table class="table small">
+              <thead><tr><th>Heure</th><th class="right">Clics</th></tr></thead>
+              <tbody id="tbodyHourly"></tbody>
+            </table>
+          </div>
+          <div id="vizHourly" class="miniViz"></div>
+        </div>
       </div>
 
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Systèmes</div>
-            <div class="sub">Android / iOS / Windows / macOS…</div>
-          </div>
-          <span class="chip">OS</span>
-        </div>
-        <div class="tableWrap">
-          <table class="table small">
-            <thead><tr><th>OS</th><th class="right">Clics</th></tr></thead>
-            <tbody id="tbodyOS"></tbody>
-          </table>
-        </div>
-        <!-- ✅ graph auto ici -->
-        <div id="vizOS" class="miniViz"></div>
-      </div>
-
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Navigateurs</div>
-            <div class="sub">Chrome / Safari / Edge…</div>
-          </div>
-          <span class="chip">Browser</span>
-        </div>
-        <div class="tableWrap">
-          <table class="table small">
-            <thead><tr><th>Navigateur</th><th class="right">Clics</th></tr></thead>
-            <tbody id="tbodyBrowser"></tbody>
-          </table>
-        </div>
-        <!-- ✅ graph auto ici -->
-        <div id="vizBrowser" class="miniViz"></div>
-      </div>
-
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Pays</div>
-            <div class="sub">ISO country (CF)</div>
-          </div>
-          <span class="chip">Country</span>
-        </div>
-        <div class="tableWrap">
-          <table class="table small">
-            <thead><tr><th>Pays</th><th class="right">Clics</th></tr></thead>
-            <tbody id="tbodyCountry"></tbody>
-          </table>
-        </div>
-        <!-- ✅ graph auto ici -->
-        <div id="vizCountry" class="miniViz"></div>
-      </div>
-
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Clics par heure (aujourd’hui)</div>
-            <div class="sub">⚠️ s’affiche seulement si l’API renvoie hourly</div>
-          </div>
-          <span class="chip">Heure locale</span>
-        </div>
-        <div class="tableWrap">
-          <table class="table small">
-            <thead><tr><th>Heure</th><th class="right">Clics</th></tr></thead>
-            <tbody id="tbodyHourly"></tbody>
-          </table>
-        </div>
-        <!-- ✅ graph auto ici -->
-        <div id="vizHourly" class="miniViz"></div>
-      </div>
-
+      <!-- Derniers clics -->
       <div class="card">
         <div class="cardHead">
           <div>
             <div class="cardTitle">Derniers clics</div>
-            <div class="sub">⚠️ s’affiche seulement si l’API renvoie last</div>
+            <div class="sub">les 50 derniers (si last est renvoyé)</div>
           </div>
-          <span class="chip">Les 50 derniers</span>
+          <span class="chip">last</span>
         </div>
         <div class="tableWrap">
           <table class="table small">
@@ -863,11 +684,20 @@
         <a href="https://stats.aperos.net/api/stats" target="_blank" rel="noopener">Stats</a>
       </div>
     </div>
+
+    <!-- Tables events invisibles (source de vérité) : app.js les remplit, et nos graphes les lisent -->
+    <div style="display:none">
+      <table><tbody id="tbodyEvent"></tbody></table>
+      <table><tbody id="tbodyBrand"></tbody></table>
+      <table><tbody id="tbodyChannel"></tbody></table>
+      <table><tbody id="tbodyAction"></tbody></table>
+      <table><tbody id="tbodyCountry"></tbody></table>
+    </div>
   </div>
 
   <script src="./app.js"></script>
 
-  <!-- ✅ AJOUTS JS : calcule %/donut/barres + graphes pour tout (lit les tbody existants) -->
+  <!-- ✅ Layout analytics : lit les tbody remplis par app.js et génère les mini-graphes par section -->
   <script>
     (function(){
       const $ = (id) => document.getElementById(id);
@@ -877,84 +707,14 @@
         const n = String(txt).replace(/[^\d]/g,'');
         return n ? parseInt(n,10) : 0;
       }
-      function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
-      function setText(id, val){ const el = $(id); if(el) el.textContent = val; }
-      function setPct(id, pct){ const el = $(id); if(el) el.textContent = (isFinite(pct) ? pct.toFixed(0) : 0) + "%"; }
-      function setBar(id, pct){ const el = $(id); if(el) el.style.width = clamp(pct,0,100).toFixed(2) + "%"; }
-
-      function paintDonut(pcts){
-        const el = $("donut");
-        if(!el) return;
-
-        let a = 0;
-        const stops = [];
-        const colors = [
-          "rgba(0,170,255,.92)",
-          "rgba(0,120,255,.88)",
-          "rgba(80,160,255,.70)",
-          "rgba(0,255,210,.60)"
-        ];
-        for(let i=0;i<4;i++){
-          const b = a + (isFinite(pcts[i]) ? pcts[i] : 0);
-          stops.push(`${colors[i]} ${a.toFixed(2)}% ${b.toFixed(2)}%`);
-          a = b;
-        }
-        if(a <= 0.01){
-          el.style.background = "conic-gradient(rgba(255,255,255,.10) 0% 100%)";
-        }else{
-          el.style.background = `conic-gradient(${stops.join(",")})`;
-        }
+      function fmt(n){
+        const v = Number(n);
+        if(!Number.isFinite(v)) return "—";
+        return new Intl.NumberFormat("fr-FR").format(v);
       }
 
-      function updateCampaignViz(){
-        const vA = toInt($("cApero")?.textContent);
-        const vC = toInt($("cCatalan")?.textContent);
-        const vCh = toInt($("cChance")?.textContent);
-        const vJ = toInt($("cJeux")?.textContent);
-
-        const sum = vA + vC + vCh + vJ;
-        const kpiTotal = toInt($("kpiTotal")?.textContent);
-
-        setText("donutTotal", sum ? String(sum) : (kpiTotal ? String(kpiTotal) : "—"));
-
-        const pA = sum ? (vA/sum*100) : 0;
-        const pC = sum ? (vC/sum*100) : 0;
-        const pCh = sum ? (vCh/sum*100) : 0;
-        const pJ = sum ? (vJ/sum*100) : 0;
-
-        setPct("pApero", pA); setText("vApero", vA ? String(vA) : "—");
-        setPct("pCatalan", pC); setText("vCatalan", vC ? String(vC) : "—");
-        setPct("pChance", pCh); setText("vChance", vCh ? String(vCh) : "—");
-        setPct("pJeux", pJ); setText("vJeux", vJ ? String(vJ) : "—");
-
-        setPct("miniApero", pA); setText("miniVApero", vA ? String(vA) : "—"); setBar("barApero", pA);
-        setPct("miniCatalan", pC); setText("miniVCatalan", vC ? String(vC) : "—"); setBar("barCatalan", pC);
-        setPct("miniChance", pCh); setText("miniVChance", vCh ? String(vCh) : "—"); setBar("barChance", pCh);
-        setPct("miniJeux", pJ); setText("miniVJeux", vJ ? String(vJ) : "—"); setBar("barJeux", pJ);
-
-        paintDonut([pA,pC,pCh,pJ]);
-
-        const items = [
-          {name:"Apéro", v:vA, p:pA},
-          {name:"Catalan", v:vC, p:pC},
-          {name:"Chance", v:vCh, p:pCh},
-          {name:"Jeux", v:vJ, p:pJ},
-        ].sort((x,y)=> (y.v - x.v));
-
-        setText("rank1", items[0].v ? `${items[0].name} • ${items[0].v} (${items[0].p.toFixed(0)}%)` : "—");
-        setText("rank2", items[1].v ? `${items[1].name} • ${items[1].v} (${items[1].p.toFixed(0)}%)` : "—");
-        setText("rank3", items[2].v ? `${items[2].name} • ${items[2].v} (${items[2].p.toFixed(0)}%)` : "—");
-        setText("rank4", items[3].v ? `${items[3].name} • ${items[3].v} (${items[3].p.toFixed(0)}%)` : "—");
-
-        setText("sumCampaigns", sum ? String(sum) : "—");
-        setText("kpiGlobalEcho", kpiTotal ? String(kpiTotal) : "—");
-        const cov = (kpiTotal && sum) ? (sum/kpiTotal*100) : 0;
-        setText("coverage", (kpiTotal && sum) ? cov.toFixed(0) + "%" : "—%");
-      }
-
-      /* ✅ Mini graphes pour TOUT (Android/iOS, Chrome/Safari, etc.) */
       function parseTableBody(tbodyId){
-        const tb = document.getElementById(tbodyId);
+        const tb = $(tbodyId);
         if(!tb) return [];
         const rows = Array.from(tb.querySelectorAll("tr"));
         const out = [];
@@ -968,9 +728,11 @@
         return out;
       }
 
-      function renderMiniViz(containerId, items, opts={}){
-        const container = document.getElementById(containerId);
+      function renderMiniViz(containerId, items, themeClass, opts={}){
+        const container = $(containerId);
         if(!container) return;
+
+        container.className = "miniViz " + (themeClass || "");
 
         if(!items || !items.length){
           container.innerHTML = `<div class="miniHint">— Pas de données pour l’instant</div>`;
@@ -984,10 +746,7 @@
         const top = sorted.slice(0, maxItems);
         const rest = sorted.slice(maxItems);
         const otherSum = rest.reduce((s,x)=>s+x.value,0);
-
-        if(otherSum > 0){
-          top.push({label:"Autres", value: otherSum});
-        }
+        if(otherSum > 0) top.push({label:"Autres", value: otherSum});
 
         const maxV = Math.max(...top.map(x=>x.value), 1);
 
@@ -999,7 +758,7 @@
               <div class="miniRow">
                 <div class="miniTop">
                   <div class="lbl" title="${x.label}">${x.label}</div>
-                  <div class="val">${x.value}<span class="pct"> • ${pct.toFixed(0)}%</span></div>
+                  <div class="val">${fmt(x.value)}<span class="pct"> • ${pct.toFixed(0)}%</span></div>
                 </div>
                 <div class="miniTrack"><div class="miniFill" style="width:${w.toFixed(2)}%"></div></div>
               </div>
@@ -1008,49 +767,112 @@
           + (opts.hint ? `<div class="miniHint">${opts.hint}</div>` : "");
       }
 
-      function updateAllMiniCharts(){
-        renderMiniViz("vizSource",  parseTableBody("tbodySource"),  {hint:"Répartition des clics par source (sms / facebook / qr / direct…)"});
-        renderMiniViz("vizDevice",  parseTableBody("tbodyDevice"),  {hint:"Mobile vs Desktop (et plus si l’API le renvoie)"});
-        renderMiniViz("vizOS",      parseTableBody("tbodyOS"),      {hint:"Android / iOS / Windows / macOS… (top + autres)"});
-        renderMiniViz("vizBrowser", parseTableBody("tbodyBrowser"), {hint:"Chrome / Safari / Edge… (top + autres)"});
-        renderMiniViz("vizCountry", parseTableBody("tbodyCountry"), {hint:"Pays (top + autres)"});
-        renderMiniViz("vizHourly",  parseTableBody("tbodyHourly"),  {hint:"Distribution aujourd’hui par heure (top + autres)"});
-
-        /* ✅ NOUVEAU: miniViz pour events */
-        renderMiniViz("vizEvent",   parseTableBody("tbodyEvent"),   {hint:"Trackings (événements) — top + autres"});
-        renderMiniViz("vizBrand",   parseTableBody("tbodyBrand"),   {hint:"Répartition par marque"});
-        renderMiniViz("vizChannel", parseTableBody("tbodyChannel"), {hint:"Répartition par canal"});
-        renderMiniViz("vizAction",  parseTableBody("tbodyAction"),  {hint:"Répartition par action (call/order/âge…)"});
+      function filterStarts(items, prefix){
+        return (items||[]).filter(x => String(x.label||"").startsWith(prefix));
       }
 
+      function pick(items, contains){
+        return (items||[]).filter(x => String(x.label||"").includes(contains));
+      }
+
+      function sum(items){ return (items||[]).reduce((s,x)=>s+(x.value||0),0); }
+
+      function updateDashboard(){
+        // source/device/os/browser/hourly (tables classiques)
+        renderMiniViz("vizSource",  parseTableBody("tbodySource"),  "", {hint:"Répartition des clics par source"});
+        renderMiniViz("vizDevice",  parseTableBody("tbodyDevice"),  "", {hint:"Mobile vs Desktop"});
+        renderMiniViz("vizOS",      parseTableBody("tbodyOS"),      "", {hint:"Android / iOS / Windows / macOS…"});
+        renderMiniViz("vizBrowser", parseTableBody("tbodyBrowser"), "", {hint:"Chrome / Safari / Edge…"});
+        renderMiniViz("vizHourly",  parseTableBody("tbodyHourly"),  "", {hint:"Distribution aujourd’hui par heure"});
+
+        // events.byBrand (comparatif)
+        const brands = parseTableBody("tbodyBrand");
+        const nuitRow = brands.find(x => x.label === "apero_nuit");
+        const catalanRow = brands.find(x => x.label === "apero_catalan");
+
+        const nuitTotal = nuitRow ? nuitRow.value : 0;
+        const catalanTotal = catalanRow ? catalanRow.value : 0;
+
+        if($("kpiBrandNuit")) $("kpiBrandNuit").textContent = fmt(nuitTotal);
+        if($("kpiBrandCatalan")) $("kpiBrandCatalan").textContent = fmt(catalanTotal);
+
+        // petites barres comparatives (1 ligne chacune)
+        renderMiniViz("vizBrandNuit", [{label:"Apéro de Nuit 66", value:nuitTotal}], "t-nuit", {maxItems: 6, hint:"Total events Nuit"});
+        renderMiniViz("vizBrandCatalan", [{label:"Apéro Catalan", value:catalanTotal}], "t-catalan", {maxItems: 6, hint:"Total events Catalan"});
+
+        // events.byEvent (labels humains)
+        const ev = parseTableBody("tbodyEvent");
+
+        // Apéro Nuit (canaux)
+        const nuitEvents = filterStarts(ev, "Apéro de Nuit 66 — ");
+        const nuitChannels = pick(nuitEvents, "— Site")
+          .concat(pick(nuitEvents, "— Facebook"))
+          .concat(pick(nuitEvents, "— SMS"))
+          .concat(pick(nuitEvents, "— QR"))
+          .concat(pick(nuitEvents, "— Application"));
+
+        const nuitActions = []
+          .concat(pick(nuitEvents, "— Bouton appeler"))
+          .concat(pick(nuitEvents, "— Commander"));
+
+        const nuitAge = []
+          .concat(pick(nuitEvents, "— Accepter l’âge"))
+          .concat(pick(nuitEvents, "— Refuser l’âge"));
+
+        if($("kpiNuitTotal")) $("kpiNuitTotal").textContent = fmt(sum(nuitEvents));
+        if($("kpiNuitActions")) $("kpiNuitActions").textContent = fmt(sum(nuitActions));
+        if($("kpiNuitAge")) $("kpiNuitAge").textContent = fmt(sum(nuitAge));
+
+        renderMiniViz("vizNuitChannels", nuitChannels, "t-nuit", {hint:"Canaux Nuit (site/facebook/sms/qr/app)"});
+        renderMiniViz("vizNuitActions", nuitActions, "t-nuit", {hint:"Actions Nuit (appeler/commander)"});
+        renderMiniViz("vizNuitAge", nuitAge, "t-nuit", {hint:"Âge Nuit (oui/non)"});
+
+        // Apéro Catalan
+        const catEvents = filterStarts(ev, "Apéro Catalan — ");
+        const catActions = []
+          .concat(pick(catEvents, "— Bouton appeler"));
+
+        const catAge = []
+          .concat(pick(catEvents, "— Accepter l’âge"))
+          .concat(pick(catEvents, "— Refuser l’âge"));
+
+        if($("kpiCatalanTotal")) $("kpiCatalanTotal").textContent = fmt(sum(catEvents));
+        if($("kpiCatalanAge")) $("kpiCatalanAge").textContent = fmt(sum(catAge));
+
+        renderMiniViz("vizCatalanActions", catActions.concat(catAge), "t-catalan", {hint:"Catalan (appeler + âge)"});
+        renderMiniViz("vizCatalanAge", catAge, "t-catalan", {hint:"Âge Catalan (oui/non)"});
+
+        // Wheel
+        const wheel = pick(ev, "Roue de la fortune — ");
+        if($("kpiWheelTotal")) $("kpiWheelTotal").textContent = fmt(sum(wheel));
+        renderMiniViz("vizWheel", wheel, "t-wheel", {hint:"Roue de la fortune (SMS)"});
+
+        // Hibair
+        const hibair = filterStarts(ev, "Hibair Drink — ");
+        if($("kpiHibairTotal")) $("kpiHibairTotal").textContent = fmt(sum(hibair));
+        renderMiniViz("vizHibair", hibair, "t-hibair", {hint:"Hibair (facebook/sms/qr/app)"});
+      }
+
+      // Observe mutations (app.js remplit les tbody)
       function boot(){
-        updateCampaignViz();
-        updateAllMiniCharts();
-
-        // refresh button : recalc après fetch
-        const btn = $("btnRefresh");
-        if(btn){
-          btn.addEventListener("click", () => {
-            setTimeout(updateCampaignViz, 350);
-            setTimeout(updateAllMiniCharts, 450);
-          });
-        }
-
-        // observe mutations (app.js écrit les valeurs)
+        updateDashboard();
         const ids = [
-          "cApero","cCatalan","cChance","cJeux","kpiTotal",
-          "tbodyCampaign","tbodySource","tbodyDevice","tbodyOS","tbodyBrowser","tbodyCountry","tbodyHourly",
-          /* ✅ NOUVEAU */
-          "tbodyEvent","tbodyBrand","tbodyChannel","tbodyAction"
+          "tbodySource","tbodyDevice","tbodyOS","tbodyBrowser","tbodyHourly",
+          "tbodyBrand","tbodyEvent"
         ];
-        const obs = new MutationObserver(() => {
-          updateCampaignViz();
-          updateAllMiniCharts();
-        });
+
+        const obs = new MutationObserver(() => updateDashboard());
         ids.forEach(id=>{
           const el = $(id);
           if(el) obs.observe(el, {childList:true, subtree:true, characterData:true});
         });
+
+        const btn = $("btnRefresh");
+        if(btn){
+          btn.addEventListener("click", () => {
+            setTimeout(updateDashboard, 600);
+          });
+        }
       }
 
       if(document.readyState === "loading"){
