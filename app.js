@@ -59,6 +59,14 @@ function buildGoLink(campaign, src="direct") {
   return u.toString();
 }
 
+// NEW: liens events (/e/<event_key>?to=...)
+function buildEventLink(event_key, to, src="direct") {
+  const u = new URL(`${STATS_ORIGIN}/e/${encodeURIComponent(event_key)}`);
+  u.searchParams.set("to", to); // déjà encodé ou pas: URL fera le boulot
+  if (src) u.searchParams.set("src", src);
+  return u.toString();
+}
+
 function defaultDestinations() {
   return {
     apero: "https://aperos.net",
@@ -112,7 +120,19 @@ function normalizeStats(data) {
   const hourly = Array.isArray(data.hourly) ? data.hourly : [];
   const last = Array.isArray(data.last) ? data.last : [];
 
-  return { total, today, byCampaign, bySource, byDevice, byOS, byBrowser, byCountry, hourly, last };
+  // NEW: events block (trackings fins)
+  const ev = (data && typeof data.events === "object" && data.events) ? data.events : null;
+  const events = {
+    total: Number(ev?.total ?? 0),
+    today: Number(ev?.today ?? 0),
+    byEvent: Array.isArray(ev?.byEvent) ? ev.byEvent : [],
+    byBrand: Array.isArray(ev?.byBrand) ? ev.byBrand : [],
+    byChannel: Array.isArray(ev?.byChannel) ? ev.byChannel : [],
+    byAction: Array.isArray(ev?.byAction) ? ev.byAction : [],
+    last: Array.isArray(ev?.last) ? ev.last : [],
+  };
+
+  return { total, today, byCampaign, bySource, byDevice, byOS, byBrowser, byCountry, hourly, last, events };
 }
 
 function renderRows(tbodyId, rows, kGetter, vGetter) {
@@ -128,10 +148,52 @@ function renderRows(tbodyId, rows, kGetter, vGetter) {
     : `<tr><td colspan="2" style="color:rgba(210,255,250,.65)">—</td></tr>`;
 }
 
-function fillKPIs({ total, today, byCampaign }) {
+// NEW: label “humain” pour tes event_key
+function eventLabel(key) {
+  const k = String(key || "").trim();
+
+  const map = {
+    // Apéro de Nuit 66 (canaux)
+    "apero_nuit.site.click": "Apéro de Nuit 66 — Site",
+    "apero_nuit.facebook.click": "Apéro de Nuit 66 — Facebook",
+    "apero_nuit.sms.click": "Apéro de Nuit 66 — SMS",
+    "apero_nuit.qr.click": "Apéro de Nuit 66 — QR",
+    "apero_nuit.app.click": "Apéro de Nuit 66 — Application",
+
+    // Hibair
+    "hibair.facebook.click": "Hibair Drink — Facebook",
+    "hibair.sms.click": "Hibair Drink — SMS",
+    "hibair.qr.click": "Hibair Drink — QR",
+    "hibair.app.click": "Hibair Drink — Application",
+
+    // Actions
+    "apero_nuit.call": "Apéro de Nuit 66 — Bouton appeler",
+    "apero_catalan.call": "Apéro Catalan — Bouton appeler",
+    "apero_nuit.app.order": "Apéro de Nuit 66 — Commander (application)",
+
+    // Roue
+    "wheel.sms.click": "Roue de la fortune — SMS",
+
+    // Age gate
+    "apero_nuit.age.accept": "Apéro de Nuit 66 — Accepter l’âge",
+    "apero_nuit.age.refuse": "Apéro de Nuit 66 — Refuser l’âge",
+    "apero_catalan.age.accept": "Apéro Catalan — Accepter l’âge",
+    "apero_catalan.age.refuse": "Apéro Catalan — Refuser l’âge",
+  };
+
+  return map[k] || k;
+}
+
+function fillKPIs({ total, today, byCampaign, events }) {
   setText("kpiTotal", formatInt(total));
   setText("kpiToday", formatInt(today));
   setText("kpiCampaigns", String((byCampaign||[]).length || 4));
+
+  // NEW KPI (optionnels) : si tu ajoutes ces IDs dans le HTML
+  if (events) {
+    if (elExists("kpiEventsTotal")) setText("kpiEventsTotal", formatInt(events.total));
+    if (elExists("kpiEventsToday")) setText("kpiEventsToday", formatInt(events.today));
+  }
 }
 
 function fillCampaigns(byCampaign) {
@@ -193,6 +255,35 @@ function fillLastClicks(last) {
   }).join("");
 }
 
+// NEW: remplir les tableaux events.*
+function fillEventTables(events) {
+  if (!events) return;
+
+  // byEvent: {k,n}
+  if (elExists("tbodyEvent")) {
+    const rows = events.byEvent || [];
+    const tbody = $("tbodyEvent");
+    tbody.innerHTML = rows.length
+      ? rows
+          .map(r => {
+            const key = safeLabel(r.k ?? r.event_key ?? r.key);
+            const n = Number(r.n ?? 0);
+            return `<tr><td>${escapeHtml(eventLabel(key))}</td><td class="right">${formatInt(n)}</td></tr>`;
+          })
+          .join("")
+      : `<tr><td colspan="2" style="color:rgba(210,255,250,.65)">—</td></tr>`;
+  }
+
+  // byBrand: {k,n}
+  renderRows("tbodyBrand", events.byBrand, r => r.k, r => r.n);
+
+  // byChannel: {k,n} (inclut "(none)")
+  renderRows("tbodyChannel", events.byChannel, r => r.k, r => r.n);
+
+  // byAction: {k,n}
+  renderRows("tbodyAction", events.byAction, r => r.k, r => r.n);
+}
+
 async function copyLinks() {
   const lines = [
     "LIENS TRACKING (Stats ADN66)",
@@ -216,7 +307,21 @@ async function copyLinks() {
     `Jeux QR : ${buildGoLink("jeux", "qr")}`,
     `Jeux Facebook : ${buildGoLink("jeux", "facebook")}`,
     `Jeux SMS : ${buildGoLink("jeux", "sms")}`,
+
+    "",
+    "— NOUVEAUX LIENS EVENTS (17 trackings) —",
+    `Apéro Nuit 66 — Site : ${buildEventLink("apero_nuit.site.click", "https://aperos.net", "site")}`,
+    `Apéro Nuit 66 — Facebook : ${buildEventLink("apero_nuit.facebook.click", "https://aperos.net", "facebook")}`,
+    `Apéro Nuit 66 — SMS : ${buildEventLink("apero_nuit.sms.click", "https://aperos.net", "sms")}`,
+    `Apéro Nuit 66 — QR : ${buildEventLink("apero_nuit.qr.click", "https://aperos.net", "qr")}`,
+    `Apéro Nuit 66 — App : ${buildEventLink("apero_nuit.app.click", "https://aperos.net", "app")}`,
+
+    `Apéro Catalan — Appeler : ${buildEventLink("apero_catalan.call", "tel:0652336461", "app")}`,
+    `Apéro Nuit 66 — Appeler : ${buildEventLink("apero_nuit.call", "tel:0652336461", "app")}`,
+
+    `Roue fortune — SMS : ${buildEventLink("wheel.sms.click", "https://chance.aperos.net", "sms")}`,
   ];
+
   const txt = lines.join("\n");
   try {
     await navigator.clipboard.writeText(txt);
@@ -282,10 +387,13 @@ async function refresh() {
     renderRows("tbodyBrowser", base.byBrowser, r => r.browser, r => r.n);
     renderRows("tbodyCountry", base.byCountry, r => r.country, r => r.n);
 
-    // If you add bySource/hourly/last in the future, it will show.
+    // Existing optional blocks
     renderRows("tbodySource", base.bySource, r => r.source, r => r.n);
     renderRows("tbodyHourly", base.hourly, r => r.hour ?? r.heure, r => r.n);
     fillLastClicks(base.last);
+
+    // NEW: events blocks
+    fillEventTables(base.events);
 
     setStatus("OK • stats à jour ✅", "good");
   } catch (err) {
@@ -294,6 +402,8 @@ async function refresh() {
     setText("kpiTotal", "—");
     setText("kpiToday", "—");
     setText("kpiCampaigns", "—");
+    if (elExists("kpiEventsTotal")) setText("kpiEventsTotal", "—");
+    if (elExists("kpiEventsToday")) setText("kpiEventsToday", "—");
   }
 }
 
