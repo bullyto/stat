@@ -53,6 +53,11 @@ function campaignLabel(key) {
   return map[(key || "").toLowerCase()] || key;
 }
 
+function buildGoLink(campaign, src="direct") {
+  const u = new URL(`${STATS_ORIGIN}/go/${encodeURIComponent(campaign)}`);
+  if (src) u.searchParams.set("src", src);
+  return u.toString();
+}
 
 // NEW: liens events (/e/<event_key>?to=...)
 function buildEventLink(event_key, to, src="direct") {
@@ -62,6 +67,14 @@ function buildEventLink(event_key, to, src="direct") {
   return u.toString();
 }
 
+function defaultDestinations() {
+  return {
+    apero: "https://aperos.net",
+    catalan: "https://catalan.aperos.net",
+    chance: "https://chance.aperos.net",
+    jeux: "https://game.aperos.net",
+  };
+}
 
 async function fetchJson(url) {
   const res = await fetch(url, { cache: "no-store" });
@@ -183,99 +196,6 @@ function fillKPIs({ total, today, byCampaign, events }) {
   }
 }
 
-
-function brandKeyToGroup(k){
-  k = String(k||"").toLowerCase();
-  if (k.includes("catalan")) return "catalan";
-  if (k.includes("hibair") || k.includes("game") || k.includes("jeux")) return "hibair";
-  if (k.includes("wheel") || k.includes("roue") || k.includes("chance")) return "wheel";
-  return "nuit";
-}
-
-function fillComparatif(events){
-  if (!events) return;
-
-  const sums = { nuit:0, catalan:0, hibair:0, wheel:0 };
-  for (const r of (events.byBrand||[])){
-    const g = brandKeyToGroup(r.k);
-    sums[g] += Number(r.n||0);
-  }
-
-  // KPI Nuit vs Catalan
-  if (elExists("kpiBrandNuit")) setText("kpiBrandNuit", formatInt(sums.nuit));
-  if (elExists("kpiBrandCatalan")) setText("kpiBrandCatalan", formatInt(sums.catalan));
-
-  const max2 = Math.max(1, sums.nuit, sums.catalan);
-  const pctN = Math.round((sums.nuit/max2)*100);
-  const pctC = Math.round((sums.catalan/max2)*100);
-
-  const mkBar = (pct, label, val) => `
-    <div class="miniRow">
-      <div class="miniTop">
-        <span class="badgeDot"></span>
-        <div class="miniLabel">${escapeHtml(label)}</div>
-        <div class="miniVal">${escapeHtml(formatInt(val))} <span class="muted">• ${pct}%</span></div>
-      </div>
-      <div class="miniBar"><div class="miniFill" style="width:${pct}%;"></div></div>
-    </div>
-  `;
-
-  const vizN = $("vizBrandNuit");
-  const vizC = $("vizBrandCatalan");
-  if (vizN) { vizN.classList.add("t-nuit"); vizN.innerHTML = mkBar(pctN, "Apéro de Nuit 66", sums.nuit); }
-  if (vizC) { vizC.classList.add("t-catalan"); vizC.innerHTML = mkBar(pctC, "Apéro Catalan", sums.catalan); }
-}
-
-function parseTs(x){
-  if (!x) return "";
-  // accept ms, sec, iso
-  if (typeof x === "number") {
-    const ms = x > 2e10 ? x : x*1000;
-    return new Date(ms).toISOString();
-  }
-  const s = String(x);
-  if (/^\d{10,13}$/.test(s)){
-    const n = Number(s);
-    const ms = s.length===13 ? n : n*1000;
-    return new Date(ms).toISOString();
-  }
-  return s;
-}
-
-function fmtShortDate(iso){
-  try{
-    const d = new Date(iso);
-    if (isNaN(d)) return iso || "—";
-    const pad = (n)=>String(n).padStart(2,"0");
-    return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  }catch{ return iso || "—"; }
-}
-
-function fillLastRows(rows, tbodyId){
-  const tbody = $(tbodyId);
-  if (!tbody) return;
-  const safe = (rows||[]).slice(0,50).map(r=>{
-    const date = fmtShortDate(parseTs(r.ts ?? r.t ?? r.created_at ?? r.time));
-    const campaign = safeLabel(r.campaign ?? r.c ?? r.brand ?? r.b ?? "—");
-    const src = safeLabel(r.src ?? r.source ?? r.channel ?? r.ch ?? "—");
-    const action = safeLabel(r.event_key ?? r.event ?? r.action ?? r.path ?? r.to ?? r.url ?? "—");
-    const os = safeLabel(r.os ?? r.platform ?? r.device_os ?? "—");
-    const br = safeLabel(r.browser ?? r.nav ?? r.ua_browser ?? "—");
-    return {date,campaign,src,action,os,br};
-  });
-
-  tbody.innerHTML = safe.length ? safe.map(r=>`
-    <tr>
-      <td>${escapeHtml(r.date)}</td>
-      <td>${escapeHtml(r.campaign)}</td>
-      <td>${escapeHtml(r.src)}</td>
-      <td>${escapeHtml(r.action)}</td>
-      <td class="hideSm">${escapeHtml(r.os)}</td>
-      <td class="hideSm">${escapeHtml(r.br)}</td>
-    </tr>
-  `).join("") : `<tr><td colspan="6" style="color:rgba(210,255,250,.65)">—</td></tr>`;
-}
-
 function fillCampaigns(byCampaign) {
   const dest = defaultDestinations();
   const map = {};
@@ -310,24 +230,20 @@ function fillLastClicks(last) {
   const tbody = $("tbodyLast");
   if (!tbody) return;
   if (!Array.isArray(last) || !last.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:rgba(210,255,250,.65)">—</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="color:rgba(210,255,250,.65)">—</td></tr>`;
     return;
   }
   tbody.innerHTML = last.slice(0,50).map(r => {
     const date = safeLabel(r.created_at ?? r.date ?? "");
     const camp = safeLabel(r.campaign ?? "");
-    const src = safeLabel(r.source ?? "");
-    const country = safeLabel(r.country ?? "");
-    const device = safeLabel(r.device ?? "");
+    const src = safeLabel(r.source ?? "");    const device = safeLabel(r.device ?? "");
     const os = safeLabel(r.os ?? "");
     const browser = safeLabel(r.browser ?? "");
     return `
       <tr>
         <td>${escapeHtml(date)}</td>
         <td>${escapeHtml(campaignLabel(String(camp).toLowerCase()))}</td>
-        <td>${escapeHtml(src)}</td>
-        <td>${escapeHtml(country)}</td>
-        <td class="hideSm">${escapeHtml(device)}</td>
+        <td>${escapeHtml(src)}</td>        <td class="hideSm">${escapeHtml(device)}</td>
         <td class="hideSm">${escapeHtml(os)}</td>
         <td class="hideSm">${escapeHtml(browser)}</td>
       </tr>
@@ -363,7 +279,6 @@ function fillEventTables(events) {
   // byAction: {k,n}
   renderRows("tbodyAction", events.byAction, r => r.k, r => r.n);
 }
-
 
 function setupPWAInstall() {
   let deferredPrompt = null;
@@ -414,19 +329,11 @@ async function refresh() {
     }
 
     fillKPIs(base);
-    fillComparatif(base.events);
     fillCampaigns(base.byCampaign);
 
     renderRows("tbodyDevice", base.byDevice, r => r.device, r => r.n);
     renderRows("tbodyOS", base.byOS, r => r.os, r => r.n);
     renderRows("tbodyBrowser", base.byBrowser, r => r.browser, r => r.n);
-  fillLastRows(base.last, "tbodyLast");
-  // Tracking events last (si dispo côté Worker)
-  if (base.events && Array.isArray(base.events.last) && base.events.last.length){
-    // concat en gardant les 50 plus récents si possible
-    const merged = base.events.last.concat(base.last||[]);
-    fillLastRows(merged, "tbodyLast");
-  }
     renderRows("tbodyCountry", base.byCountry, r => r.country, r => r.n);
 
     // Existing optional blocks
@@ -484,7 +391,7 @@ async function hardReload() {
 document.addEventListener("DOMContentLoaded", () => {
   setText("apiHost", "stats.aperos.net");
   if (elExists("btnRefresh")) $("btnRefresh").addEventListener("click", refresh);
-  if (elExists("btnCopyLinks"))   if (elExists("btnHardReload")) $("btnHardReload").addEventListener("click", hardReload);
+  if (elExists("btnHardReload")) $("btnHardReload").addEventListener("click", hardReload);
 
   setupPWAInstall();
   setupAuto();
