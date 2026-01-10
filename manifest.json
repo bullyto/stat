@@ -1,20 +1,20 @@
 {
-  "name": "Stats • Apéro de Nuit 66",
-  "short_name": "Stats ADN66",
-  "start_url": "./",
+  "name": "Liens Tracking • ADN66",
+  "short_name": "Liens ADN66",
+  "start_url": "./?src=pwa",
   "scope": "./",
   "display": "standalone",
   "background_color": "#071f24",
   "theme_color": "#0b2b31",
-  "description": "Dashboard marketing • suivi des clics (Cloudflare Workers + D1)",
+  "description": "Hub de liens tracking (stats.aperos.net) pour Apéro de Nuit 66 / Catalan / Hibair / Roue",
   "icons": [
     {
-      "src": "./assets/icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "./assets/icon-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
