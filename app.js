@@ -286,49 +286,43 @@ function fillEventTables(events) {
 
 async function copyLinks() {
   const lines = [
-    "LIENS TRACKING (Stats ADN66)",
+    "TRACKINGS OFFICIELS (ADN66)",
     "",
-    `Apéro direct : ${buildGoLink("apero", "direct")}`,
-    `Apéro QR : ${buildGoLink("apero", "qr")}`,
-    `Apéro Facebook : ${buildGoLink("apero", "facebook")}`,
-    `Apéro SMS : ${buildGoLink("apero", "sms")}`,
+    "1) Apéro de Nuit 66 — aperos.net (boutons)",
+    `• Bouton JEUX : ${buildGoLink("jeux","direct")}`,
+    `• Bouton INSTALL APP : ${buildEventLink("apero_nuit.app.click", "https://aperos.net", "app")}`,
+    `• Bouton APPEL : ${buildEventLink("apero_nuit.call", "tel:0652336461", "app")}`,
     "",
-    `Catalan direct : ${buildGoLink("catalan", "direct")}`,
-    `Catalan QR : ${buildGoLink("catalan", "qr")}`,
-    `Catalan Facebook : ${buildGoLink("catalan", "facebook")}`,
-    `Catalan SMS : ${buildGoLink("catalan", "sms")}`,
+    "2) Apéro de Nuit 66 — acquisition (liens à coller)",
+    `• Facebook : ${buildEventLink("apero_nuit.facebook.click", "https://aperos.net", "facebook")}`,
+    `• QR code : ${buildEventLink("apero_nuit.qr.click", "https://aperos.net", "qr")}`,
+    `• Google My Business : ${buildEventLink("apero_nuit.site.click", "https://aperos.net", "site")}`,
     "",
-    `Chance direct : ${buildGoLink("chance", "direct")}`,
-    `Chance QR : ${buildGoLink("chance", "qr")}`,
-    `Chance Facebook : ${buildGoLink("chance", "facebook")}`,
-    `Chance SMS : ${buildGoLink("chance", "sms")}`,
+    "3) Roue — bouton avis",
+    `• Avis (SMS) : ${buildEventLink("wheel.sms.click", "https://chance.aperos.net", "sms")}`,
     "",
-    `Jeux direct : ${buildGoLink("jeux", "direct")}`,
-    `Jeux QR : ${buildGoLink("jeux", "qr")}`,
-    `Jeux Facebook : ${buildGoLink("jeux", "facebook")}`,
-    `Jeux SMS : ${buildGoLink("jeux", "sms")}`,
-
+    "4) Apéro Catalan — catalan.aperos.net",
+    `• Bouton APPEL : ${buildEventLink("apero_catalan.call", "tel:0652336461", "app")}`,
+    `• Bouton INSTALL APP : ${buildEventLink("apero_catalan.app.click", "https://catalan.aperos.net", "app")}`,
     "",
-    "— NOUVEAUX LIENS EVENTS (17 trackings) —",
-    `Apéro Nuit 66 — Site : ${buildEventLink("apero_nuit.site.click", "https://aperos.net", "site")}`,
-    `Apéro Nuit 66 — Facebook : ${buildEventLink("apero_nuit.facebook.click", "https://aperos.net", "facebook")}`,
-    `Apéro Nuit 66 — SMS : ${buildEventLink("apero_nuit.sms.click", "https://aperos.net", "sms")}`,
-    `Apéro Nuit 66 — QR : ${buildEventLink("apero_nuit.qr.click", "https://aperos.net", "qr")}`,
-    `Apéro Nuit 66 — App : ${buildEventLink("apero_nuit.app.click", "https://aperos.net", "app")}`,
-
-    `Apéro Catalan — Appeler : ${buildEventLink("apero_catalan.call", "tel:0652336461", "app")}`,
-    `Apéro Nuit 66 — Appeler : ${buildEventLink("apero_nuit.call", "tel:0652336461", "app")}`,
-
-    `Roue fortune — SMS : ${buildEventLink("wheel.sms.click", "https://chance.aperos.net", "sms")}`,
+    "5) Apéro Catalan — acquisition",
+    `• Google My Business : ${buildGoLink("catalan","direct")}`,
+    `• Facebook : ${buildGoLink("catalan","facebook")}`,
+    "",
+    "6) Hibair Drink (Jeux) — acquisition",
+    `• QR code : ${buildGoLink("jeux","qr")}`,
+    `• Facebook : ${buildGoLink("jeux","facebook")}`,
   ];
 
-  const txt = lines.join("\n");
+  const txt = lines.join("
+");
   try {
     await navigator.clipboard.writeText(txt);
     setStatus("Liens copiés ✅", "good");
   } catch {
     setStatus("Copie bloquée (navigateur) — ouvre sur Chrome", "warn");
   }
+}
 }
 
 function setupPWAInstall() {
