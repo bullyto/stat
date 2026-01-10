@@ -53,11 +53,6 @@ function campaignLabel(key) {
   return map[(key || "").toLowerCase()] || key;
 }
 
-function buildGoLink(campaign, src="direct") {
-  const u = new URL(`${STATS_ORIGIN}/go/${encodeURIComponent(campaign)}`);
-  if (src) u.searchParams.set("src", src);
-  return u.toString();
-}
 
 // NEW: liens events (/e/<event_key>?to=...)
 function buildEventLink(event_key, to, src="direct") {
@@ -67,14 +62,6 @@ function buildEventLink(event_key, to, src="direct") {
   return u.toString();
 }
 
-function defaultDestinations() {
-  return {
-    apero: "https://aperos.net",
-    catalan: "https://catalan.aperos.net",
-    chance: "https://chance.aperos.net",
-    jeux: "https://game.aperos.net",
-  };
-}
 
 async function fetchJson(url) {
   const res = await fetch(url, { cache: "no-store" });
@@ -196,6 +183,99 @@ function fillKPIs({ total, today, byCampaign, events }) {
   }
 }
 
+
+function brandKeyToGroup(k){
+  k = String(k||"").toLowerCase();
+  if (k.includes("catalan")) return "catalan";
+  if (k.includes("hibair") || k.includes("game") || k.includes("jeux")) return "hibair";
+  if (k.includes("wheel") || k.includes("roue") || k.includes("chance")) return "wheel";
+  return "nuit";
+}
+
+function fillComparatif(events){
+  if (!events) return;
+
+  const sums = { nuit:0, catalan:0, hibair:0, wheel:0 };
+  for (const r of (events.byBrand||[])){
+    const g = brandKeyToGroup(r.k);
+    sums[g] += Number(r.n||0);
+  }
+
+  // KPI Nuit vs Catalan
+  if (elExists("kpiBrandNuit")) setText("kpiBrandNuit", formatInt(sums.nuit));
+  if (elExists("kpiBrandCatalan")) setText("kpiBrandCatalan", formatInt(sums.catalan));
+
+  const max2 = Math.max(1, sums.nuit, sums.catalan);
+  const pctN = Math.round((sums.nuit/max2)*100);
+  const pctC = Math.round((sums.catalan/max2)*100);
+
+  const mkBar = (pct, label, val) => `
+    <div class="miniRow">
+      <div class="miniTop">
+        <span class="badgeDot"></span>
+        <div class="miniLabel">${escapeHtml(label)}</div>
+        <div class="miniVal">${escapeHtml(formatInt(val))} <span class="muted">• ${pct}%</span></div>
+      </div>
+      <div class="miniBar"><div class="miniFill" style="width:${pct}%;"></div></div>
+    </div>
+  `;
+
+  const vizN = $("vizBrandNuit");
+  const vizC = $("vizBrandCatalan");
+  if (vizN) { vizN.classList.add("t-nuit"); vizN.innerHTML = mkBar(pctN, "Apéro de Nuit 66", sums.nuit); }
+  if (vizC) { vizC.classList.add("t-catalan"); vizC.innerHTML = mkBar(pctC, "Apéro Catalan", sums.catalan); }
+}
+
+function parseTs(x){
+  if (!x) return "";
+  // accept ms, sec, iso
+  if (typeof x === "number") {
+    const ms = x > 2e10 ? x : x*1000;
+    return new Date(ms).toISOString();
+  }
+  const s = String(x);
+  if (/^\d{10,13}$/.test(s)){
+    const n = Number(s);
+    const ms = s.length===13 ? n : n*1000;
+    return new Date(ms).toISOString();
+  }
+  return s;
+}
+
+function fmtShortDate(iso){
+  try{
+    const d = new Date(iso);
+    if (isNaN(d)) return iso || "—";
+    const pad = (n)=>String(n).padStart(2,"0");
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }catch{ return iso || "—"; }
+}
+
+function fillLastRows(rows, tbodyId){
+  const tbody = $(tbodyId);
+  if (!tbody) return;
+  const safe = (rows||[]).slice(0,50).map(r=>{
+    const date = fmtShortDate(parseTs(r.ts ?? r.t ?? r.created_at ?? r.time));
+    const campaign = safeLabel(r.campaign ?? r.c ?? r.brand ?? r.b ?? "—");
+    const src = safeLabel(r.src ?? r.source ?? r.channel ?? r.ch ?? "—");
+    const action = safeLabel(r.event_key ?? r.event ?? r.action ?? r.path ?? r.to ?? r.url ?? "—");
+    const os = safeLabel(r.os ?? r.platform ?? r.device_os ?? "—");
+    const br = safeLabel(r.browser ?? r.nav ?? r.ua_browser ?? "—");
+    return {date,campaign,src,action,os,br};
+  });
+
+  tbody.innerHTML = safe.length ? safe.map(r=>`
+    <tr>
+      <td>${escapeHtml(r.date)}</td>
+      <td>${escapeHtml(r.campaign)}</td>
+      <td>${escapeHtml(r.src)}</td>
+      <td>${escapeHtml(r.action)}</td>
+      <td class="hideSm">${escapeHtml(r.os)}</td>
+      <td class="hideSm">${escapeHtml(r.br)}</td>
+    </tr>
+  `).join("") : `<tr><td colspan="6" style="color:rgba(210,255,250,.65)">—</td></tr>`;
+}
+
 function fillCampaigns(byCampaign) {
   const dest = defaultDestinations();
   const map = {};
@@ -285,196 +365,6 @@ function fillEventTables(events) {
 }
 
 
-// ====== Smart comparisons (par code couleur) ======
-const BRAND_CFG = [
-  { id:"nuit",   title:"Apéro de Nuit 66",   color:"var(--cNuit)",   match:[/\bapero[_-]?nuit\b/i, /^apero_nuit\./i] },
-  { id:"catalan",title:"Apéro Catalan",      color:"var(--cCatalan)",match:[/\bcatalan\b/i, /^apero_catalan\./i] },
-  { id:"hibair", title:"Hibair Drink",       color:"var(--cHibair)", match:[/\bhibair\b/i, /\bjeux\b/i, /\bgame\b/i] },
-  { id:"wheel",  title:"Roue de la fortune", color:"var(--cWheel)",  match:[/\bwheel\b/i, /\bchance\b/i] },
-];
-
-function getBrandIdFromKey(eventKey){
-  const k = String(eventKey||"").trim();
-  for(const b of BRAND_CFG){
-    if (b.match.some(rx=>rx.test(k))) return b.id;
-  }
-  return "other";
-}
-
-function getChannelFromKey(eventKey){
-  const k = String(eventKey||"").toLowerCase();
-  if (k.includes("facebook")) return "Facebook";
-  if (k.includes(".sms") || k.includes("sms")) return "SMS";
-  if (k.includes(".qr") || k.includes("qr")) return "QR";
-  if (k.includes(".app") || k.includes("application") || k.includes("app.click")) return "Application";
-  if (k.includes(".site") || k.includes("site.click")) return "Site";
-  if (k.includes(".direct") || k.includes("src=direct") || k.includes("direct")) return "Direct";
-  return "Autre";
-}
-
-function buildSmartGroups(byEvent){
-  const groups = {};
-  for (const r of (byEvent||[])){
-    const key = safeLabel(r.k ?? r.event_key ?? r.key ?? "");
-    const n = Number(r.n ?? 0);
-    if (!key || !Number.isFinite(n) || n<=0) continue;
-
-    const bid = getBrandIdFromKey(key);
-    if (!groups[bid]) groups[bid] = { id: bid, total:0, channels:{}, events:[] };
-    const g = groups[bid];
-    g.total += n;
-
-    const ch = getChannelFromKey(key);
-    g.channels[ch] = (g.channels[ch]||0) + n;
-    g.events.push({ key, n, label: eventLabel(key), channel: ch });
-  }
-
-  // attach meta
-  const out = Object.values(groups).map(g=>{
-    const meta = BRAND_CFG.find(b=>b.id===g.id);
-    return {
-      ...g,
-      title: meta?.title ?? (g.id==="other" ? "Autres" : g.id),
-      color: meta?.color ?? "rgba(255,255,255,.35)",
-    };
-  });
-
-  // sort + tidy
-  for (const g of out){
-    g.events.sort((a,b)=>b.n-a.n || String(a.label).localeCompare(String(b.label)));
-    g._channelsSorted = Object.entries(g.channels)
-      .map(([k,v])=>({k, v:Number(v)}))
-      .sort((a,b)=>b.v-a.v || a.k.localeCompare(b.k));
-  }
-  out.sort((a,b)=>b.total-a.total || a.title.localeCompare(b.title));
-  return out;
-}
-
-function renderSmartComparisons(events){
-  const hostSummary = $("smartSummary");
-  const hostGroups = $("brandGroups");
-  if (!hostSummary || !hostGroups) return;
-
-  const groups = buildSmartGroups(events?.byEvent || []);
-  const overall = groups.reduce((s,g)=>s+g.total,0);
-  const maxTotal = Math.max(1, ...groups.map(g=>g.total));
-
-  // summary (comparatif global)
-  hostSummary.innerHTML = groups.length ? groups.map(g=>{
-    const pct = overall ? Math.round((g.total/overall)*100) : 0;
-    const w = Math.round((g.total/maxTotal)*100);
-    return `
-      <div class="smartRow">
-        <div class="smartLeft">
-          <span class="dot" style="background:${g.color}"></span>
-          <div class="smartName">${escapeHtml(g.title)}</div>
-        </div>
-        <div class="smartRight">
-          <div class="smartVal">${formatInt(g.total)} <span class="muted">• ${pct}%</span></div>
-          <div class="bar"><div class="barIn" style="width:${w}%;background:${g.color}"></div></div>
-        </div>
-      </div>
-    `;
-  }).join("") : `<div class="muted">—</div>`;
-
-  // detail cards (par marque)
-  hostGroups.innerHTML = groups.length ? groups.map(g=>{
-    const topEvents = g.events.slice(0,10);
-    const maxCh = Math.max(1, ...g._channelsSorted.map(c=>c.v));
-    const channelsHtml = g._channelsSorted.map(c=>{
-      const w = Math.round((c.v/maxCh)*100);
-      const pct = g.total ? Math.round((c.v/g.total)*100) : 0;
-      return `
-        <div class="chRow">
-          <div class="chName">${escapeHtml(c.k)}</div>
-          <div class="chVal">${formatInt(c.v)} <span class="muted">• ${pct}%</span></div>
-          <div class="bar sm"><div class="barIn" style="width:${w}%;background:${g.color}"></div></div>
-        </div>
-      `;
-    }).join("");
-
-    const eventsHtml = topEvents.map(e=>{
-      const pct = g.total ? Math.round((e.n/g.total)*100) : 0;
-      return `<div class="evItem"><span class="evName">${escapeHtml(e.label)}</span><span class="evVal">${formatInt(e.n)} <span class="muted">• ${pct}%</span></span></div>`;
-    }).join("");
-
-    return `
-      <div class="card brandCard">
-        <div class="brandHead">
-          <div>
-            <div class="brandTitle"><span class="dot" style="background:${g.color}"></span>${escapeHtml(g.title)}</div>
-            <div class="sub">Canaux + Actions + Âge</div>
-          </div>
-          <div class="brandTotal">
-            <div class="pillKpi"><div class="l">Total</div><div class="r">${formatInt(g.total)}</div></div>
-          </div>
-        </div>
-
-        <div class="brandBody">
-          <div class="brandCols">
-            <div class="brandCol">
-              <div class="miniTitle">Canaux</div>
-              <div class="chList">${channelsHtml || '<div class="muted">—</div>'}</div>
-            </div>
-            <div class="brandCol">
-              <div class="miniTitle">Top actions</div>
-              <div class="evList">${eventsHtml || '<div class="muted">—</div>'}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("") : "";
-}
-
-
-async function copyLinks() {
-  const lines = [
-    "LIENS TRACKING (Stats ADN66)",
-    "",
-    `Apéro direct : ${buildGoLink("apero", "direct")}`,
-    `Apéro QR : ${buildGoLink("apero", "qr")}`,
-    `Apéro Facebook : ${buildGoLink("apero", "facebook")}`,
-    `Apéro SMS : ${buildGoLink("apero", "sms")}`,
-    "",
-    `Catalan direct : ${buildGoLink("catalan", "direct")}`,
-    `Catalan QR : ${buildGoLink("catalan", "qr")}`,
-    `Catalan Facebook : ${buildGoLink("catalan", "facebook")}`,
-    `Catalan SMS : ${buildGoLink("catalan", "sms")}`,
-    "",
-    `Chance direct : ${buildGoLink("chance", "direct")}`,
-    `Chance QR : ${buildGoLink("chance", "qr")}`,
-    `Chance Facebook : ${buildGoLink("chance", "facebook")}`,
-    `Chance SMS : ${buildGoLink("chance", "sms")}`,
-    "",
-    `Jeux direct : ${buildGoLink("jeux", "direct")}`,
-    `Jeux QR : ${buildGoLink("jeux", "qr")}`,
-    `Jeux Facebook : ${buildGoLink("jeux", "facebook")}`,
-    `Jeux SMS : ${buildGoLink("jeux", "sms")}`,
-
-    "",
-    "— NOUVEAUX LIENS EVENTS (17 trackings) —",
-    `Apéro Nuit 66 — Site : ${buildEventLink("apero_nuit.site.click", "https://aperos.net", "site")}`,
-    `Apéro Nuit 66 — Facebook : ${buildEventLink("apero_nuit.facebook.click", "https://aperos.net", "facebook")}`,
-    `Apéro Nuit 66 — SMS : ${buildEventLink("apero_nuit.sms.click", "https://aperos.net", "sms")}`,
-    `Apéro Nuit 66 — QR : ${buildEventLink("apero_nuit.qr.click", "https://aperos.net", "qr")}`,
-    `Apéro Nuit 66 — App : ${buildEventLink("apero_nuit.app.click", "https://aperos.net", "app")}`,
-
-    `Apéro Catalan — Appeler : ${buildEventLink("apero_catalan.call", "tel:0652336461", "app")}`,
-    `Apéro Nuit 66 — Appeler : ${buildEventLink("apero_nuit.call", "tel:0652336461", "app")}`,
-
-    `Roue fortune — SMS : ${buildEventLink("wheel.sms.click", "https://chance.aperos.net", "sms")}`,
-  ];
-
-  const txt = lines.join("\n");
-  try {
-    await navigator.clipboard.writeText(txt);
-    setStatus("Liens copiés ✅", "good");
-  } catch {
-    setStatus("Copie bloquée (navigateur) — ouvre sur Chrome", "warn");
-  }
-}
-
 function setupPWAInstall() {
   let deferredPrompt = null;
   const btn = $("btnInstall");
@@ -524,11 +414,19 @@ async function refresh() {
     }
 
     fillKPIs(base);
+    fillComparatif(base.events);
     fillCampaigns(base.byCampaign);
 
     renderRows("tbodyDevice", base.byDevice, r => r.device, r => r.n);
     renderRows("tbodyOS", base.byOS, r => r.os, r => r.n);
     renderRows("tbodyBrowser", base.byBrowser, r => r.browser, r => r.n);
+  fillLastRows(base.last, "tbodyLast");
+  // Tracking events last (si dispo côté Worker)
+  if (base.events && Array.isArray(base.events.last) && base.events.last.length){
+    // concat en gardant les 50 plus récents si possible
+    const merged = base.events.last.concat(base.last||[]);
+    fillLastRows(merged, "tbodyLast");
+  }
     renderRows("tbodyCountry", base.byCountry, r => r.country, r => r.n);
 
     // Existing optional blocks
@@ -586,8 +484,7 @@ async function hardReload() {
 document.addEventListener("DOMContentLoaded", () => {
   setText("apiHost", "stats.aperos.net");
   if (elExists("btnRefresh")) $("btnRefresh").addEventListener("click", refresh);
-  if (elExists("btnCopyLinks")) $("btnCopyLinks").addEventListener("click", copyLinks);
-  if (elExists("btnHardReload")) $("btnHardReload").addEventListener("click", hardReload);
+  if (elExists("btnCopyLinks"))   if (elExists("btnHardReload")) $("btnHardReload").addEventListener("click", hardReload);
 
   setupPWAInstall();
   setupAuto();
