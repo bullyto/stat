@@ -3,14 +3,233 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0b2b31" />
-  <title>Liens Tracking • ADN66</title>
+  <meta name="theme-color" content="#061425" />
+  <title>Stats • ADN66</title>
 
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="./icon-192.png" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
 
   <link rel="stylesheet" href="./style.css" />
+
+  <style>
+    :root{
+      --bg0:#040a14;
+      --bg1:#061425;
+      --card:rgba(255,255,255,.035);
+      --line:rgba(234,242,255,.12);
+      --ink:#eaf2ff;
+      --muted:rgba(234,242,255,.70);
+      --r:16px;
+
+      --blueA: rgba(0,170,255,.90);
+      --blueB: rgba(0,110,255,.85);
+
+      --yellowA: rgba(255,210,0,.92);
+      --yellowB: rgba(255,150,0,.85);
+
+      --greenA: rgba(0,255,150,.72);
+      --greenB: rgba(0,190,120,.70);
+
+      --violetA: rgba(175,120,255,.85);
+      --violetB: rgba(120,90,255,.78);
+
+      --shadow: 0 12px 45px rgba(0,0,0,.42);
+    }
+
+    html,body{ background: var(--bg0) !important; color: var(--ink) !important; }
+    .bg{
+      background:
+        radial-gradient(1100px 430px at 10% 0%, rgba(0,170,255,.10), transparent 55%),
+        radial-gradient(900px 380px at 90% 10%, rgba(255,210,0,.06), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1)) !important;
+    }
+
+    /* 🔽 Réduction globale des tailles */
+    .h1{ font-size: 18px !important; font-weight: 900 !important; letter-spacing:.5px; text-transform: uppercase; }
+    .sub{ font-size: 12px !important; font-weight: 650; color: var(--muted) !important; }
+
+    .card, .block{
+      border-radius: var(--r) !important;
+      border: 1px solid var(--line) !important;
+      background: var(--card) !important;
+      box-shadow: var(--shadow);
+    }
+
+    .grid{ gap: 10px !important; }
+    .grid2{ gap: 12px !important; }
+    .gridBottom{ gap: 12px !important; }
+
+    .kpiValue{
+      font-size: 22px !important;
+      font-weight: 950 !important;
+      letter-spacing: .2px;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+    .kpiLabel{ font-size: 12px !important; font-weight: 850 !important; }
+    .kpiHint{ font-size: 11px !important; color: rgba(234,242,255,.60) !important; }
+
+    /* Sections */
+    .sectionTitle{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:12px;
+      margin: 12px 0 8px;
+      padding: 0 2px;
+    }
+    .sectionTitle .t{
+      font-weight: 950;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: rgba(234,242,255,.90);
+    }
+    .sectionTitle .k{
+      font-weight: 800;
+      font-size: 12px;
+      color: rgba(234,242,255,.55);
+      white-space: nowrap;
+    }
+
+    /* Blocks */
+    .block{ overflow:hidden; }
+    .blockHead{
+      padding: 12px 12px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .blockTitle{
+      font-weight: 950;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      font-size: 12px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color: rgba(234,242,255,.92);
+    }
+    .blockSub{ margin-top: 4px; font-size: 12px; color: rgba(234,242,255,.60); font-weight: 700; }
+    .badgeDot{
+      width:10px; height:10px; border-radius:999px;
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 10px 22px rgba(0,0,0,.25);
+      flex: 0 0 auto;
+    }
+    .blockBody{ padding: 12px; }
+
+    .twoCols{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 980px){
+      .twoCols{ grid-template-columns: 1fr; }
+    }
+
+    .pillKpi{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+      padding: 10px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+    }
+    .pillKpi .l{ color: rgba(234,242,255,.70); font-weight: 850; font-size: 12px; }
+    .pillKpi .r{ font-weight: 950; letter-spacing:.2px; font-size: 14px; white-space: nowrap; }
+
+    /* ✅ Graphes : pas de débordement */
+    .miniViz{ display:flex; flex-direction:column; gap: 8px; margin-top: 10px; }
+    .miniRow{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 10px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+      overflow: hidden; /* important */
+    }
+    .miniTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      font-weight: 900;
+      min-width: 0;
+    }
+    .miniTop .lbl{
+      color: rgba(234,242,255,.92);
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 62%;
+      min-width: 0;
+      font-size: 13px;
+    }
+    .miniTop .val{
+      color: rgba(234,242,255,.78);
+      font-weight: 950;
+      white-space: nowrap;
+      font-size: 13px;
+      flex: 0 0 auto;
+    }
+    .miniTop .pct{
+      font-weight: 950;
+      color: rgba(234,242,255,.86);
+      margin-left: 8px;
+      font-size: 12px;
+    }
+    .miniTrack{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .miniFill{
+      height:100%;
+      width:0%;
+      max-width: 100%;
+      border-radius:999px;
+      transition: width .25s ease;
+    }
+    .miniHint{ display:none; } /* plus de texte inutile */
+
+    /* palettes */
+    .t-nuit .badgeDot{ background: var(--blueA); }
+    .t-catalan .badgeDot{ background: var(--yellowA); }
+    .t-wheel .badgeDot{ background: var(--greenA); }
+    .t-hibair .badgeDot{ background: var(--violetA); }
+
+    .t-nuit .miniFill{ background: linear-gradient(90deg, var(--blueA), var(--blueB)); }
+    .t-catalan .miniFill{ background: linear-gradient(90deg, var(--yellowA), var(--yellowB)); }
+    .t-wheel .miniFill{ background: linear-gradient(90deg, var(--greenA), var(--greenB)); }
+    .t-hibair .miniFill{ background: linear-gradient(90deg, var(--violetA), var(--violetB)); }
+
+    /* Détails tables : compact */
+    .table.small th, .table.small td{ padding: 10px 10px !important; font-size: 13px !important; }
+    .table thead th{ letter-spacing:.35px; text-transform: uppercase; }
+
+    /* Campagne cards : moins gros */
+    .campaignCard{ padding: 14px !important; }
+    .campName{ font-size: 18px !important; font-weight: 950 !important; }
+    .campValue{ font-size: 36px !important; font-weight: 950 !important; line-height: 1 !important; }
+    .campExact{ font-size: 12px !important; color: rgba(234,242,255,.55) !important; }
+
+    /* Responsive: moins de padding sur mobile */
+    @media (max-width: 520px){
+      .wrap{ padding-left: 12px !important; padding-right: 12px !important; }
+      .blockHead{ padding: 10px 10px 8px; }
+      .blockBody{ padding: 10px; }
+    }
+  </style>
 </head>
 
 <body>
@@ -20,113 +239,582 @@
     <div class="brand">
       <img class="logo" src="./icon-192.png" alt="Logo" />
       <div>
-        <div class="h1">Liens Tracking</div>
-        <div class="sub">Stats • Apéro de Nuit 66 • Apéro Catalan • Hibair • Roue</div>
+        <div class="h1">Stats</div>
+        <div class="sub">Suivi des clics</div>
       </div>
     </div>
 
     <div class="pills">
-      <div class="pill"><span class="dot"></span>stats.aperos.net</div>
-      <div class="pill">Ouverture dans un nouvel onglet</div>
-      <div class="pill">PWA • Offline</div>
+      <div class="pill"><span class="dot"></span>Cloudflare</div>
+      <div class="pill">D1 • <span id="dbName">stats_db</span></div>
+      <div class="pill">API • <span id="apiHost">stats.aperos.net</span></div>
     </div>
 
     <div class="actions">
-      <button class="btn" id="btnCopyAll">Copier tous les liens</button>
-      <button class="btn ghost" id="btnInstall" hidden>Installer l’app</button>
+      <button class="btn" id="btnRefresh">Actualiser</button>
+<button class="btn ghost" id="btnInstall" hidden>Installer</button>
+    </div>
+
+    <div class="statusRow">
+      <div id="status" class="status warn">—</div>
+      <div class="mini">
+        <span>Auto</span>
+        <label class="switch">
+          <input type="checkbox" id="autoToggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
   </div>
 
   <div class="wrap">
+
+    <!-- KPIs -->
     <div class="grid">
-
-      <!-- Aperos.net -->
-      <section class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">aperos.net</div>
-            <div class="cardSub">Boutons principaux + Age Gate</div>
-          </div>
-        </div>
-        <div class="cardBody">
-          <div class="linkList" id="listAperos"></div>
-        </div>
-      </section>
-
-      <!-- Réseaux / listings (Apéro Nuit) -->
-      <section class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Pages externes (Apéro de Nuit 66)</div>
-            <div class="cardSub">Facebook + Google Business</div>
-          </div>
-        </div>
-        <div class="cardBody">
-          <div class="linkList" id="listNuitExternal"></div>
-        </div>
-      </section>
-
-      <!-- Catalan -->
-      <section class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">catalan.aperos.net</div>
-            <div class="cardSub">Boutons + Age Gate</div>
-          </div>
-        </div>
-        <div class="cardBody">
-          <div class="linkList" id="listCatalan"></div>
-        </div>
-      </section>
-
-      <!-- Catalan externes -->
-      <section class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Pages externes (Apéro Catalan)</div>
-            <div class="cardSub">Facebook + Google Business</div>
-          </div>
-        </div>
-        <div class="cardBody">
-          <div class="linkList" id="listCatalanExternal"></div>
-        </div>
-      </section>
-
-      <!-- Hibair -->
-      <section class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Hibair Drink (Jeux)</div>
-            <div class="cardSub">Tracking QR + Facebook</div>
-          </div>
-        </div>
-        <div class="cardBody">
-          <div class="linkList" id="listHibair"></div>
-        </div>
-      </section>
-
-      <!-- Roue -->
-      <section class="card">
-        <div class="cardHead">
-          <div>
-            <div class="cardTitle">Roue (Chance)</div>
-            <div class="cardSub">Bouton avis / SMS</div>
-          </div>
-        </div>
-        <div class="cardBody">
-          <div class="linkList" id="listWheel"></div>
-        </div>
-      </section>
-
+      <div class="card kpi">
+        <div class="kpiLabel">Clics total</div>
+        <div class="kpiValue" id="kpiTotal">—</div>
+        <div class="kpiHint">Campagnes</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpiLabel">Aujourd’hui</div>
+        <div class="kpiValue" id="kpiToday">—</div>
+        <div class="kpiHint">Campagnes</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpiLabel">Events total</div>
+        <div class="kpiValue" id="kpiEventsTotal">—</div>
+        <div class="kpiHint">Actions</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpiLabel">Events aujourd’hui</div>
+        <div class="kpiValue" id="kpiEventsToday">—</div>
+        <div class="kpiHint">Actions</div>
+      </div>
     </div>
 
-    <div class="foot">
-      <span>Astuce :</span> le bouton <b>Installer l’app</b> n’apparaît que si le navigateur déclenche l’événement d’installation.
+    <!-- Comparatif -->
+    <div class="sectionTitle">
+      <div class="t">Comparatif</div>
+      <div class="k">Nuit vs Catalan</div>
+    </div>
+
+    <div class="block">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot" style="background:rgba(255,255,255,.35)"></span> Total events</div>
+          <div class="blockSub">Apéro de Nuit 66 / Apéro Catalan</div>
+        </div>
+        <span class="chip">events.byBrand</span>
+      </div>
+      <div class="blockBody">
+        <div class="twoCols">
+          <div class="pillKpi"><div class="l">Apéro de Nuit 66</div><div class="r" id="kpiBrandNuit">—</div></div>
+          <div class="pillKpi"><div class="l">Apéro Catalan</div><div class="r" id="kpiBrandCatalan">—</div></div>
+        </div>
+        <div class="twoCols" style="margin-top:10px;">
+          <div class="miniViz t-nuit" id="vizBrandNuit"></div>
+          <div class="miniViz t-catalan" id="vizBrandCatalan"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Apéro de Nuit (bleu) -->
+    <div class="sectionTitle">
+      <div class="t">Apéro de Nuit 66</div>
+      <div class="k">Bleu</div>
+    </div>
+
+    <div class="block t-nuit">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot"></span> Apéro de Nuit 66</div>
+          <div class="blockSub">Canaux + Actions + Âge</div>
+        </div>
+        <span class="chip">events.byEvent</span>
+      </div>
+      <div class="blockBody">
+        <div class="twoCols">
+          <div>
+            <div class="pillKpi"><div class="l">Total Nuit</div><div class="r" id="kpiNuitTotal">—</div></div>
+            <div class="miniViz t-nuit" id="vizNuitChannels"></div>
+          </div>
+          <div>
+            <div class="pillKpi"><div class="l">Actions</div><div class="r" id="kpiNuitActions">—</div></div>
+            <div class="miniViz t-nuit" id="vizNuitActions"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <div class="pillKpi"><div class="l">Âge (Oui / Non)</div><div class="r" id="kpiNuitAge">—</div></div>
+          <div class="miniViz t-nuit" id="vizNuitAge"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Apéro Catalan (jaune) -->
+    <div class="sectionTitle">
+      <div class="t">Apéro Catalan</div>
+      <div class="k">Jaune</div>
+    </div>
+
+    <div class="block t-catalan">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot"></span> Apéro Catalan</div>
+          <div class="blockSub">Actions + Âge</div>
+        </div>
+        <span class="chip">events.byEvent</span>
+      </div>
+      <div class="blockBody">
+        <div class="twoCols">
+          <div>
+            <div class="pillKpi"><div class="l">Total Catalan</div><div class="r" id="kpiCatalanTotal">—</div></div>
+            <div class="miniViz t-catalan" id="vizCatalanActions"></div>
+          </div>
+          <div>
+            <div class="pillKpi"><div class="l">Âge (Oui / Non)</div><div class="r" id="kpiCatalanAge">—</div></div>
+            <div class="miniViz t-catalan" id="vizCatalanAge"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Roue -->
+    <div class="sectionTitle">
+      <div class="t">Roue de la fortune</div>
+      <div class="k">Vert</div>
+    </div>
+
+    <div class="block t-wheel">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot"></span> Roue</div>
+          <div class="blockSub">wheel.sms.click</div>
+        </div>
+        <span class="chip">wheel</span>
+      </div>
+      <div class="blockBody">
+        <div class="pillKpi"><div class="l">Total</div><div class="r" id="kpiWheelTotal">—</div></div>
+        <div class="miniViz t-wheel" id="vizWheel"></div>
+      </div>
+    </div>
+
+    <!-- Hibair -->
+    <div class="sectionTitle">
+      <div class="t">Hibair Drink</div>
+      <div class="k">Violet</div>
+    </div>
+
+    <div class="block t-hibair">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot"></span> Hibair</div>
+          <div class="blockSub">facebook / sms / qr / app</div>
+        </div>
+        <span class="chip">hibair</span>
+      </div>
+      <div class="blockBody">
+        <div class="pillKpi"><div class="l">Total</div><div class="r" id="kpiHibairTotal">—</div></div>
+        <div class="miniViz t-hibair" id="vizHibair"></div>
+      </div>
+    </div>
+
+    
+    <!-- Comparaisons intelligentes (par code couleur) -->
+    <div class="sectionTitle">
+      <div class="t">Comparaisons intelligentes</div>
+      <div class="k">Triées • par marque • par canal</div>
+    </div>
+
+    <div class="block" id="smartCompare">
+      <div class="blockHead">
+        <div>
+          <div class="blockTitle"><span class="badgeDot" style="background:rgba(255,255,255,.35)"></span> Vue d’ensemble</div>
+          <div class="blockSub">Apéro de Nuit 66 • Apéro Catalan • Hibair Drink • Roue</div>
+        </div>
+        <span class="chip">smart</span>
+      </div>
+      <div class="blockBody">
+        <div id="smartSummary" class="smartSummary"></div>
+      </div>
+    </div>
+
+    <div id="brandGroups" class="brandGroups"></div>
+
+<!-- Détails -->
+    <div class="sectionTitle">
+      <div class="t">Détails</div>
+      <div class="k">Tech</div>
+    </div>
+
+    <div class="grid2">
+
+      <!-- Campagnes -->
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Campagnes</div>
+            <div class="sub">apero / catalan / chance / jeux</div>
+          </div>
+          <span class="chip">clicks.byCampaign</span>
+        </div>
+
+        <div class="campaignCards">
+          <div class="campaignCard">
+            <div class="campTop"><div class="campName">Apéro</div><span class="campPill">apero</span></div>
+            <div class="campValue" id="cApero">—</div>
+            <div class="campExact">/go/apero?src=…</div>
+          </div>
+
+          <div class="campaignCard">
+            <div class="campTop"><div class="campName">Catalan</div><span class="campPill">catalan</span></div>
+            <div class="campValue" id="cCatalan">—</div>
+            <div class="campExact">/go/catalan?src=…</div>
+          </div>
+
+          <div class="campaignCard">
+            <div class="campTop"><div class="campName">Chance</div><span class="campPill">chance</span></div>
+            <div class="campValue" id="cChance">—</div>
+            <div class="campExact">/go/chance?src=…</div>
+          </div>
+
+          <div class="campaignCard">
+            <div class="campTop"><div class="campName">Jeux</div><span class="campPill">jeux</span></div>
+            <div class="campValue" id="cJeux">—</div>
+            <div class="campExact">/go/jeux?src=…</div>
+          </div>
+        </div>
+
+        <div class="tableWrap">
+          <table class="table small">
+            <thead><tr><th>Campagne</th><th class="right">Clics</th><th class="hideSm">Tracking</th><th class="hideSm">Destination</th></tr></thead>
+            <tbody id="tbodyCampaign"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Source -->
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Origines</div>
+            <div class="sub">sms / facebook / qr / direct</div>
+          </div>
+          <span class="chip">bySource</span>
+        </div>
+        <div class="tableWrap">
+          <table class="table small">
+            <thead><tr><th>Source</th><th class="right">Clics</th></tr></thead>
+            <tbody id="tbodySource"></tbody>
+          </table>
+        </div>
+        <div id="vizSource" class="miniViz"></div>
+      </div>
+
+      <!-- Appareils -->
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Appareils</div>
+            <div class="sub">Téléphone / Ordinateur</div>
+          </div>
+          <span class="chip">Device</span>
+        </div>
+        <div class="tableWrap">
+          <table class="table small">
+            <thead><tr><th>Appareil</th><th class="right">Clics</th></tr></thead>
+            <tbody id="tbodyDevice"></tbody>
+          </table>
+        </div>
+        <div id="vizDevice" class="miniViz"></div>
+      </div>
+
+      <!-- OS -->
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Systèmes</div>
+            <div class="sub">Android / iOS / Windows / macOS</div>
+          </div>
+          <span class="chip">OS</span>
+        </div>
+        <div class="tableWrap">
+          <table class="table small">
+            <thead><tr><th>OS</th><th class="right">Clics</th></tr></thead>
+            <tbody id="tbodyOS"></tbody>
+          </table>
+        </div>
+        <div id="vizOS" class="miniViz"></div>
+      </div>
+
+      <!-- Browser -->
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Navigateurs</div>
+            <div class="sub">Chrome / Safari / Edge</div>
+          </div>
+          <span class="chip">Browser</span>
+        </div>
+        <div class="tableWrap">
+          <table class="table small">
+            <thead><tr><th>Navigateur</th><th class="right">Clics</th></tr></thead>
+            <tbody id="tbodyBrowser"></tbody>
+          </table>
+        </div>
+        <div id="vizBrowser" class="miniViz"></div>
+      </div>
+
+      <!-- Hourly -->
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Clics par heure</div>
+            <div class="sub">aujourd’hui</div>
+          </div>
+          <span class="chip">Hourly</span>
+        </div>
+        <div class="tableWrap">
+          <table class="table small">
+            <thead><tr><th>Heure</th><th class="right">Clics</th></tr></thead>
+            <tbody id="tbodyHourly"></tbody>
+          </table>
+        </div>
+        <div id="vizHourly" class="miniViz"></div>
+      </div>
+
+      <!-- Last -->
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="cardTitle">Derniers clics</div>
+            <div class="sub">50 derniers</div>
+          </div>
+          <span class="chip">last</span>
+        </div>
+        <div class="tableWrap">
+          <table class="table small">
+            <thead>
+              <tr>
+                <th>Date</th><th>Campagne</th><th>Source</th><th class="hideSm">Appareil</th><th class="hideSm">OS</th><th class="hideSm">Nav</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyLast"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="foot">
+        <button class="linkBtn" id="btnHardReload">Forcer MAJ</button>
+      </div>
+    </div>
+
+    <!-- sources de vérité remplis par app.js -->
+    <div style="display:none">
+      <table><tbody id="tbodyEvent"></tbody></table>
+      <table><tbody id="tbodyBrand"></tbody></table>
+      <table><tbody id="tbodyChannel"></tbody></table>
+      <table><tbody id="tbodyAction"></tbody></table>
+      <table><tbody id="tbodyCountry"></tbody></table>
     </div>
   </div>
 
-  <div class="toast" id="toast">—</div>
-
   <script src="./app.js"></script>
+
+  <script>
+    (function(){
+      const $ = (id) => document.getElementById(id);
+
+      function toInt(txt){
+        if(!txt) return 0;
+        const n = String(txt).replace(/[^\d]/g,'');
+        return n ? parseInt(n,10) : 0;
+      }
+      function fmt(n){
+        const v = Number(n);
+        if(!Number.isFinite(v)) return "—";
+        return new Intl.NumberFormat("fr-FR").format(v);
+      }
+
+      function normLabelFR(s){
+        const x = String(s || "").trim();
+
+        const map = {
+          // device
+          "desktop": "Ordinateur",
+          "mobile": "Téléphone",
+
+          // os
+          "Other": "Autre",
+          "Android": "Android",
+          "iOS": "iOS",
+          "Windows": "Windows",
+          "macOS": "macOS",
+
+          // browser
+          "Chrome": "Chrome",
+          "Safari": "Safari",
+          "Edge": "Edge",
+          "Firefox": "Firefox"
+        };
+
+        return map[x] || x;
+      }
+
+      function parseTableBody(tbodyId){
+        const tb = $(tbodyId);
+        if(!tb) return [];
+        const rows = Array.from(tb.querySelectorAll("tr"));
+        const out = [];
+        for(const tr of rows){
+          const tds = tr.querySelectorAll("td,th");
+          if(!tds || tds.length < 2) continue;
+          const rawLabel = (tds[0].textContent || "").trim();
+          const label = normLabelFR(rawLabel);
+          const value = toInt((tds[1].textContent || "").trim());
+          if(label) out.push({label, value});
+        }
+        return out;
+      }
+
+      function renderMiniViz(containerId, items, themeClass, opts={}){
+        const container = $(containerId);
+        if(!container) return;
+
+        container.className = "miniViz " + (themeClass || "");
+
+        if(!items || !items.length){
+          container.innerHTML = "";
+          return;
+        }
+
+        const maxItems = opts.maxItems ?? 6;
+        const sorted = items.slice().sort((a,b)=>b.value-a.value);
+        const total = sorted.reduce((s,x)=>s+x.value,0) || 0;
+
+        const top = sorted.slice(0, maxItems);
+        const rest = sorted.slice(maxItems);
+        const otherSum = rest.reduce((s,x)=>s+x.value,0);
+        if(otherSum > 0) top.push({label:"Autres", value: otherSum});
+
+        const maxV = Math.max(...top.map(x=>x.value), 1);
+
+        container.innerHTML = top.map(x=>{
+          const pct = total ? (x.value/total*100) : 0;
+          const w = Math.max(0, Math.min(100, maxV ? (x.value/maxV*100) : 0));
+          return `
+            <div class="miniRow">
+              <div class="miniTop">
+                <div class="lbl" title="${x.label}">${x.label}</div>
+                <div class="val">${fmt(x.value)} <span class="pct">• ${pct.toFixed(0)}%</span></div>
+              </div>
+              <div class="miniTrack"><div class="miniFill" style="width:${w.toFixed(2)}%"></div></div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      function filterStarts(items, prefix){
+        return (items||[]).filter(x => String(x.label||"").startsWith(prefix));
+      }
+      function pick(items, contains){
+        return (items||[]).filter(x => String(x.label||"").includes(contains));
+      }
+      function sum(items){ return (items||[]).reduce((s,x)=>s+(x.value||0),0); }
+
+      function updateDashboard(){
+        // mini viz tables
+        renderMiniViz("vizSource",  parseTableBody("tbodySource"),  "");
+        renderMiniViz("vizDevice",  parseTableBody("tbodyDevice"),  "");
+        renderMiniViz("vizOS",      parseTableBody("tbodyOS"),      "");
+        renderMiniViz("vizBrowser", parseTableBody("tbodyBrowser"), "");
+        renderMiniViz("vizHourly",  parseTableBody("tbodyHourly"),  "");
+
+        // comparatif byBrand
+        const brands = parseTableBody("tbodyBrand");
+        const nuitRow = brands.find(x => x.label === "apero_nuit");
+        const catalanRow = brands.find(x => x.label === "apero_catalan");
+
+        const nuitTotal = nuitRow ? nuitRow.value : 0;
+        const catalanTotal = catalanRow ? catalanRow.value : 0;
+
+        if($("kpiBrandNuit")) $("kpiBrandNuit").textContent = fmt(nuitTotal);
+        if($("kpiBrandCatalan")) $("kpiBrandCatalan").textContent = fmt(catalanTotal);
+
+        renderMiniViz("vizBrandNuit", [{label:"Apéro de Nuit 66", value:nuitTotal}], "t-nuit", {maxItems: 2});
+        renderMiniViz("vizBrandCatalan", [{label:"Apéro Catalan", value:catalanTotal}], "t-catalan", {maxItems: 2});
+
+        // events byEvent (déjà “humain” via app.js)
+        const ev = parseTableBody("tbodyEvent");
+
+        // Nuit
+        const nuitEvents = filterStarts(ev, "Apéro de Nuit 66 — ");
+        const nuitChannels = []
+          .concat(pick(nuitEvents, "— Site"))
+          .concat(pick(nuitEvents, "— Facebook"))
+          .concat(pick(nuitEvents, "— SMS"))
+          .concat(pick(nuitEvents, "— QR"))
+          .concat(pick(nuitEvents, "— Application"));
+
+        const nuitActions = []
+          .concat(pick(nuitEvents, "— Bouton appeler"))
+          .concat(pick(nuitEvents, "— Commander"));
+
+        const nuitAge = []
+          .concat(pick(nuitEvents, "— Accepter l’âge"))
+          .concat(pick(nuitEvents, "— Refuser l’âge"));
+
+        if($("kpiNuitTotal")) $("kpiNuitTotal").textContent = fmt(sum(nuitEvents));
+        if($("kpiNuitActions")) $("kpiNuitActions").textContent = fmt(sum(nuitActions));
+        if($("kpiNuitAge")) $("kpiNuitAge").textContent = fmt(sum(nuitAge));
+
+        renderMiniViz("vizNuitChannels", nuitChannels, "t-nuit");
+        renderMiniViz("vizNuitActions", nuitActions, "t-nuit");
+        renderMiniViz("vizNuitAge", nuitAge, "t-nuit");
+
+        // Catalan
+        const catEvents = filterStarts(ev, "Apéro Catalan — ");
+        const catActions = []
+          .concat(pick(catEvents, "— Bouton appeler"));
+
+        const catAge = []
+          .concat(pick(catEvents, "— Accepter l’âge"))
+          .concat(pick(catEvents, "— Refuser l’âge"));
+
+        if($("kpiCatalanTotal")) $("kpiCatalanTotal").textContent = fmt(sum(catEvents));
+        if($("kpiCatalanAge")) $("kpiCatalanAge").textContent = fmt(sum(catAge));
+
+        renderMiniViz("vizCatalanActions", catActions.concat(catAge), "t-catalan");
+        renderMiniViz("vizCatalanAge", catAge, "t-catalan");
+
+        // Wheel
+        const wheel = pick(ev, "Roue de la fortune — ");
+        if($("kpiWheelTotal")) $("kpiWheelTotal").textContent = fmt(sum(wheel));
+        renderMiniViz("vizWheel", wheel, "t-wheel");
+
+        // Hibair
+        const hibair = filterStarts(ev, "Hibair Drink — ");
+        if($("kpiHibairTotal")) $("kpiHibairTotal").textContent = fmt(sum(hibair));
+        renderMiniViz("vizHibair", hibair, "t-hibair");
+      }
+
+      function boot(){
+        updateDashboard();
+        const ids = ["tbodySource","tbodyDevice","tbodyOS","tbodyBrowser","tbodyHourly","tbodyBrand","tbodyEvent"];
+        const obs = new MutationObserver(() => updateDashboard());
+        ids.forEach(id=>{
+          const el = $(id);
+          if(el) obs.observe(el, {childList:true, subtree:true, characterData:true});
+        });
+
+        const btn = $("btnRefresh");
+        if(btn) btn.addEventListener("click", () => setTimeout(updateDashboard, 500));
+      }
+
+      if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+      else boot();
+    })();
+  </script>
 </body>
 </html>
