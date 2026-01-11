@@ -87,8 +87,22 @@ function barRow(label, n, pct, palette){
 
   const grad = `linear-gradient(90deg, ${palette.c1}, ${palette.c2})`;
 
+  const rowStyle = [
+    "display:flex",
+    "flex-direction:column",
+    "align-items:stretch",
+    "gap:8px",
+    "margin:8px 0"
+  ].join(";");
+
+  const topStyle = [
+    "display:flex",
+    "align-items:center",
+    "justify-content:space-between",
+    "gap:10px"
+  ].join(";");
+
   const trackStyle = [
-    "margin-top:8px",
     "height:16px",
     "border-radius:999px",
     "border:1px solid rgba(255,255,255,.28)",
@@ -110,8 +124,8 @@ function barRow(label, n, pct, palette){
   ].join(";");
 
   return `
-    <div class="barRow">
-      <div class="barTop">
+    <div class="barRow" style="${rowStyle}">
+      <div class="barTop" style="${topStyle}">
         <div class="left">${esc(label)}</div>
         <div class="right"><span>${fmt(n)}</span><span style="opacity:.85">•</span><span>${pctTxt}</span></div>
       </div>
@@ -215,7 +229,17 @@ function buildComparisons(s){
   const catAgeOk = Number(E["apero_catalan.age.accept"] ?? 0);
   const catAgeNo = Number(E["apero_catalan.age.refuse"] ?? 0);
 
-  // Catalan source split is /go links; without API bySource, we can't split reliably.
+  
+  // TOTAL EVENTS (brand) — includes main tracked actions + age + origins (+ catalan /go as campaign)
+  const catGo = Number(C["catalan"] ?? 0);
+  const totalNuit = nuitJeux + nuitInstall + nuitCall + nuitAgeOk + nuitAgeNo + nuitFb + nuitGmb;
+  const totalCat = catInstall + catCall + catAgeOk + catAgeNo + catGo;
+
+  const brandItems = [
+    { label: "Apéro de Nuit 66", n: totalNuit },
+    { label: "Apéro Catalan", n: totalCat },
+  ];
+// Catalan source split is /go links; without API bySource, we can't split reliably.
   // We display an informative message in UI (handled below).
 
   // Gamification
@@ -291,7 +315,8 @@ async function refresh(){
 
     const cmp = buildComparisons(s);
 
-    renderCompare("nuitIntent", cmp.nuitIntent);
+      renderCompare("brandCompare", brandItems);
+  renderCompare("nuitIntent", cmp.nuitIntent);
     renderCompare("nuitAge", cmp.nuitAge);
     renderCompare("nuitSource", cmp.nuitSource);
 
