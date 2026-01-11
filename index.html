@@ -9,455 +9,370 @@
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="./icon-192.png" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
-
   <link rel="stylesheet" href="./style.css" />
 
-  <!-- Base visuelle conservée + ajustements couleurs (Roue = rouge) -->
+  <!-- Ajustements pour coller au rendu des captures (cards + bar rows) -->
   <style>
     :root{
-      --bg0:#040a14;
-      --bg1:#061425;
-      --card:rgba(255,255,255,.035);
-      --line:rgba(234,242,255,.12);
-      --ink:#eaf2ff;
-      --muted:rgba(234,242,255,.70);
-      --r:16px;
+      --r:18px;
+      --cardGlass: rgba(255,255,255,.035);
+      --line: rgba(231,255,255,.12);
+      --line2: rgba(231,255,255,.08);
 
-      --blueA: rgba(0,170,255,.90);
-      --blueB: rgba(0,110,255,.85);
-
-      --yellowA: rgba(255,210,0,.92);
-      --yellowB: rgba(255,150,0,.85);
-
-      --violetA: rgba(175,120,255,.85);
-      --violetB: rgba(120,90,255,.78);
-
-      --redA: rgba(255,70,70,.88);
-      --redB: rgba(255,20,90,.78);
-
-      --shadow: 0 12px 45px rgba(0,0,0,.42);
+      --blue:#1aa7ff;
+      --yellow:#ffcc00;
+      --violet:#a678ff;
+      --red:#ff3b4d; /* roue */
+      --chip: rgba(90,255,235,.11);
+      --chipLine: rgba(140,255,235,.26);
     }
+    body{ background: radial-gradient(1100px 730px at 15% 10%, rgba(26,167,255,.12), transparent 55%),
+                     radial-gradient(900px 640px at 85% 15%, rgba(255,204,0,.07), transparent 55%),
+                     linear-gradient(180deg, #040b16, #071a22) !important; }
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 14px 12px 28px; }
+    .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media(max-width:760px){ .row2{ grid-template-columns:1fr; } }
 
-    html,body{ background: var(--bg0) !important; color: var(--ink) !important; }
-    .bg{
-      background:
-        radial-gradient(1100px 430px at 10% 0%, rgba(0,170,255,.10), transparent 55%),
-        radial-gradient(900px 380px at 90% 10%, rgba(255,210,0,.06), transparent 55%),
-        linear-gradient(180deg, var(--bg0), var(--bg1)) !important;
-    }
+    .titleRow{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; padding: 10px 4px 6px; }
+    .titleRow h1{ margin:0; font-size: 20px; letter-spacing:.6px; text-transform: uppercase; }
+    .titleRow .sub{ color: rgba(231,255,255,.62); font-weight: 700; font-size: 12px; }
 
-    .h1{ font-size: 18px !important; font-weight: 900 !important; letter-spacing:.5px; text-transform: uppercase; }
-    .sub{ font-size: 12px !important; font-weight: 650; color: var(--muted) !important; }
-
-    .card, .block{
-      border-radius: var(--r) !important;
-      border: 1px solid var(--line) !important;
-      background: var(--card) !important;
-      box-shadow: var(--shadow);
+    .card{
+      border-radius: var(--r);
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow: 0 18px 45px rgba(0,0,0,.45);
+      overflow:hidden;
     }
-
-    .sectionTitle{
-      display:flex; align-items:baseline; justify-content:space-between;
-      gap:12px; margin: 14px 0 8px; padding: 0 2px;
-    }
-    .sectionTitle .t{
-      font-weight: 950; letter-spacing:.6px; text-transform: uppercase;
-      font-size: 12px; color: rgba(234,242,255,.90);
-    }
-    .sectionTitle .k{
-      font-weight: 800; font-size: 12px; color: rgba(234,242,255,.55); white-space: nowrap;
-    }
-
-    .block{ overflow:hidden; }
-    .blockHead{
-      padding: 12px 12px 10px;
-      border-bottom: 1px solid rgba(255,255,255,.07);
+    .cardHead{
+      padding: 14px 14px 10px;
       display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      border-bottom: 1px solid var(--line2);
     }
-    .blockTitle{
-      font-weight: 950; letter-spacing:.6px; text-transform: uppercase;
-      font-size: 12px; display:flex; align-items:center; gap:10px;
-      color: rgba(234,242,255,.92);
+    .cardHead .h{
+      display:flex; align-items:center; gap:10px;
+      font-weight: 950; letter-spacing:.6px; text-transform: uppercase; font-size: 14px;
     }
-    .blockSub{ margin-top: 4px; font-size: 12px; color: rgba(234,242,255,.60); font-weight: 700; }
-    .badgeDot{
-      width:10px; height:10px; border-radius:999px;
-      border: 1px solid rgba(255,255,255,.14);
-      box-shadow: 0 10px 22px rgba(0,0,0,.25);
-      flex: 0 0 auto;
+    .dot{ width:10px; height:10px; border-radius:999px; border:1px solid rgba(255,255,255,.16); }
+    .meta{ color: rgba(231,255,255,.60); font-weight: 750; margin-top: 4px; }
+    .chip{
+      font-weight: 900;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--chipLine);
+      background: var(--chip);
+      color: rgba(231,255,255,.80);
+      white-space: nowrap;
     }
-    .blockBody{ padding: 12px; }
+    .cardBody{ padding: 12px 14px 14px; }
 
-    .btn{
-      border:0; border-radius: 14px; padding: 10px 12px;
-      font-weight: 900; letter-spacing:.2px;
-      color: rgba(4,10,20,.95);
-      background: linear-gradient(135deg, rgba(0,170,255,.95), rgba(0,110,255,.85));
-      box-shadow: 0 14px 28px rgba(0,0,0,.22), 0 0 0 1px rgba(255,255,255,.05);
-      cursor:pointer;
-    }
-    .btn.ghost{
-      color: rgba(234,242,255,.92);
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(234,242,255,.14);
-    }
+    .bigNum{ font-size: 44px; font-weight: 950; line-height: 1; margin-top: 2px; }
+    .bigLbl{ color: rgba(231,255,255,.55); font-weight: 800; margin-top: 2px; }
 
-    .twoCols{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    @media (max-width: 980px){ .twoCols{ grid-template-columns: 1fr; } }
-
-    .miniViz{ display:flex; flex-direction:column; gap: 8px; margin-top: 10px; }
-    .miniRow{
-      display:grid; grid-template-columns: 1fr; gap: 6px;
-      padding: 10px 10px;
-      border-radius: 14px;
+    .list{
+      display:flex; flex-direction:column; gap: 10px;
+    }
+    .pillRow{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding: 14px 14px;
+      border-radius: 16px;
       border: 1px solid rgba(255,255,255,.08);
       background: rgba(255,255,255,.03);
-      overflow: hidden;
+      font-weight: 900;
     }
-    .miniTop{
-      display:flex; align-items:center; justify-content:space-between;
-      gap: 10px; font-weight: 900; min-width: 0;
-    }
-    .miniTop .lbl{
-      color: rgba(234,242,255,.92);
-      overflow:hidden; text-overflow: ellipsis; white-space: nowrap;
-      max-width: 62%; min-width: 0; font-size: 13px;
-    }
-    .miniTop .val{
-      color: rgba(234,242,255,.78);
-      font-weight: 950; white-space: nowrap; font-size: 13px; flex: 0 0 auto;
-    }
-    .miniTop .pct{ font-weight: 950; color: rgba(234,242,255,.86); margin-left: 8px; font-size: 12px; }
-    .miniTrack{
-      height: 10px; border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      overflow:hidden; border: 1px solid rgba(255,255,255,.10);
-    }
-    .miniFill{ height:100%; width:0%; max-width: 100%; border-radius:999px; transition: width .25s ease; }
+    .pillRow .name{ color: rgba(231,255,255,.88); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 68%; }
+    .pillRow .n{ color: rgba(231,255,255,.92); }
 
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; color: rgba(234,242,255,.82); line-height: 1.35; }
-    .mono b{ color: rgba(234,242,255,.95); }
-    .mono a{ color: rgba(234,242,255,.92); text-decoration: none; border-bottom: 1px dotted rgba(234,242,255,.35); }
-    .mono a:hover{ border-bottom-color: rgba(234,242,255,.65); }
+    .barRow{
+      padding: 12px 12px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+    }
+    .barTop{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      font-weight: 950;
+    }
+    .barTop .left{
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 70%;
+    }
+    .barTop .right{
+      white-space: nowrap;
+      color: rgba(231,255,255,.90);
+      display:flex; gap:10px; align-items:center;
+    }
+    .barTrack{
+      margin-top: 10px;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.07);
+      overflow:hidden;
+    }
+    .barFill{ height:100%; width:0%; border-radius:999px; transition: width .25s ease; }
 
-    /* palettes */
-    .t-nuit .badgeDot{ background: var(--blueA); }
-    .t-catalan .badgeDot{ background: var(--yellowA); }
-    .t-hibair .badgeDot{ background: var(--violetA); }
-    .t-wheel .badgeDot{ background: var(--redA); }
+    .secLabel{
+      margin: 16px 4px 8px;
+      display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+      color: rgba(231,255,255,.72);
+      font-weight: 950; letter-spacing:.7px; text-transform: uppercase;
+    }
+    .secLabel small{ color: rgba(231,255,255,.50); font-weight: 850; text-transform:none; letter-spacing:0; }
 
-    .t-nuit .miniFill{ background: linear-gradient(90deg, var(--blueA), var(--blueB)); }
-    .t-catalan .miniFill{ background: linear-gradient(90deg, var(--yellowA), var(--yellowB)); }
-    .t-hibair .miniFill{ background: linear-gradient(90deg, var(--violetA), var(--violetB)); }
-    .t-wheel .miniFill{ background: linear-gradient(90deg, var(--redA), var(--redB)); }
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      color: rgba(231,255,255,.86);
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .mono a{ color: rgba(231,255,255,.92); text-decoration:none; border-bottom: 1px dotted rgba(231,255,255,.35); }
+    .mono a:hover{ border-bottom-color: rgba(231,255,255,.70); }
 
-    .tableWrap{ overflow:auto; }
+    /* brand palettes */
+    .b-blue .dot{ background: var(--blue); }
+    .b-blue .barFill{ background: linear-gradient(90deg, rgba(26,167,255,.95), rgba(0,120,255,.85)); }
+
+    .b-yellow .dot{ background: var(--yellow); }
+    .b-yellow .barFill{ background: linear-gradient(90deg, rgba(255,204,0,.95), rgba(255,145,0,.85)); }
+
+    .b-violet .dot{ background: var(--violet); }
+    .b-violet .barFill{ background: linear-gradient(90deg, rgba(166,120,255,.92), rgba(120,90,255,.82)); }
+
+    .b-red .dot{ background: var(--red); }
+    .b-red .barFill{ background: linear-gradient(90deg, rgba(255,59,77,.92), rgba(255,10,90,.78)); }
+
     table{ width:100%; border-collapse: collapse; }
-    th,td{ padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 13px; }
-    th{ text-transform: uppercase; letter-spacing: .35px; color: rgba(234,242,255,.55); text-align:left; }
-    td{ color: rgba(234,242,255,.92); }
-    .right{ text-align:right; }
+    th,td{ padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 13px; }
+    th{ text-transform: uppercase; letter-spacing: .35px; color: rgba(231,255,255,.55); text-align:left; }
+    td{ color: rgba(231,255,255,.92); }
+    .rightTxt{ text-align:right; }
     .hideSm{ display: table-cell; }
-    @media (max-width: 700px){ .hideSm{ display:none; } }
+    @media (max-width: 720px){ .hideSm{ display:none; } }
+
+    .statusLine{
+      margin: 8px 4px 2px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      color: rgba(231,255,255,.55); font-weight: 800; font-size: 12px;
+    }
+    .btn{
+      border: 1px solid rgba(231,255,255,.14);
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      color: rgba(231,255,255,.92);
+      padding: 10px 12px;
+      font-weight: 950;
+      cursor:pointer;
+    }
+    .btn.primary{
+      border:0;
+      background: linear-gradient(135deg, rgba(26,167,255,.95), rgba(0,120,255,.85));
+      color: rgba(3,10,18,.92);
+      box-shadow: 0 16px 28px rgba(0,0,0,.25);
+    }
+    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; padding: 10px 4px 0; }
   </style>
 </head>
 
 <body>
-  <div class="bg"></div>
-
-  <div class="top">
-    <div class="brand">
-      <img class="logo" src="./icon-192.png" alt="Logo" />
-      <div>
-        <div class="h1">Stats</div>
-        <div class="sub">Suivi tracking • ADN66</div>
-      </div>
-    </div>
-
-    <div class="pills">
-      <div class="pill"><span class="dot"></span>Cloudflare</div>
-      <div class="pill">D1 • <span id="dbName">stats_db</span></div>
-      <div class="pill">API • <span id="apiHost">stats.aperos.net</span></div>
-    </div>
-
-    <div class="actions">
-      <button class="btn" id="btnRefresh">Actualiser</button>
-      <button class="btn ghost" id="btnCopyLinks">Copier mes liens</button>
-      <button class="btn ghost" id="btnInstall" hidden>Installer</button>
-    </div>
-
-    <div class="statusRow">
-      <div id="status" class="status warn">—</div>
-      <div class="mini">
-        <span>Auto</span>
-        <label class="switch">
-          <input type="checkbox" id="autoToggle" />
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
-  </div>
-
   <div class="wrap">
-
-    <!-- 1) Liens (exact format demandé) -->
-    <div class="sectionTitle">
-      <div class="t">Liens tracking</div>
-      <div class="k">copie/colle</div>
+    <div class="titleRow">
+      <div>
+        <h1>Stats</h1>
+        <div class="sub">Tracking ADN66 • D1 + Worker</div>
+      </div>
+      <div class="btnRow">
+        <button class="btn primary" id="btnRefresh">Actualiser</button>
+        <button class="btn" id="btnCopyLinks">Copier liens</button>
+      </div>
     </div>
 
-    <div class="block">
-      <div class="blockHead">
-        <div>
-          <div class="blockTitle"><span class="badgeDot" style="background:rgba(255,255,255,.35)"></span> Mes URLs</div>
-          <div class="blockSub">Format ADN66 (Apéro / Catalan / Hibair / Roue)</div>
+    <div class="statusLine">
+      <div id="status">—</div>
+      <div>API: <span style="color:rgba(231,255,255,.80)">stats.aperos.net</span></div>
+    </div>
+
+    <div class="row2">
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Actions</div>
+            <div class="meta">Events total</div>
+          </div>
+          <span class="chip" id="chipTotal">events.total</span>
         </div>
-        <span class="chip">trak.txt</span>
+        <div class="cardBody">
+          <div class="bigNum" id="totalEvents">—</div>
+          <div class="bigLbl">Actions</div>
+        </div>
       </div>
-      <div class="blockBody">
+
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Events aujourd’hui</div>
+            <div class="meta">Events du jour</div>
+          </div>
+          <span class="chip" id="chipToday">events.today</span>
+        </div>
+        <div class="cardBody">
+          <div class="bigNum" id="todayEvents">—</div>
+          <div class="bigLbl">Actions</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="secLabel">Comparatif <small>Nuit vs Catalan</small></div>
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Total Events</div>
+          <div class="meta">Apéro de Nuit 66 / Apéro Catalan</div>
+        </div>
+        <span class="chip">events.byBrand</span>
+      </div>
+      <div class="cardBody">
+        <div class="list" id="cmpList">—</div>
+        <div class="list" style="margin-top:10px" id="cmpBars">—</div>
+      </div>
+    </div>
+
+    <div class="secLabel">Apéro de Nuit 66 <small>Bleu</small></div>
+    <div class="card b-blue">
+      <div class="cardHead">
+        <div>
+          <div class="h"><span class="dot"></span>Apéro de Nuit 66</div>
+          <div class="meta">Canaux + Actions + Âge</div>
+        </div>
+        <span class="chip">events.byEvent</span>
+      </div>
+      <div class="cardBody">
+        <div class="pillRow"><span class="name">Total Nuit</span><span class="n" id="totalNuit">—</span></div>
+        <div class="list" style="margin-top:10px" id="nuitBars">—</div>
+      </div>
+    </div>
+
+    <div class="secLabel">Apéro Catalan <small>Jaune</small></div>
+    <div class="card b-yellow">
+      <div class="cardHead">
+        <div>
+          <div class="h"><span class="dot"></span>Apéro Catalan</div>
+          <div class="meta">Actions + Âge</div>
+        </div>
+        <span class="chip">events.byEvent</span>
+      </div>
+      <div class="cardBody">
+        <div class="pillRow"><span class="name">Total Catalan</span><span class="n" id="totalCatalan">—</span></div>
+        <div class="list" style="margin-top:10px" id="catalanBars">—</div>
+      </div>
+    </div>
+
+    <div class="secLabel">Roue de la Fortune <small>Rouge</small></div>
+    <div class="card b-red">
+      <div class="cardHead">
+        <div>
+          <div class="h"><span class="dot"></span>Roue</div>
+          <div class="meta">Suivi : <span style="opacity:.8">wheel.*</span></div>
+        </div>
+        <span class="chip">wheel</span>
+      </div>
+      <div class="cardBody">
+        <div class="pillRow"><span class="name">Total roue</span><span class="n" id="totalWheel">—</span></div>
+        <div class="list" style="margin-top:10px" id="wheelBars">—</div>
+      </div>
+    </div>
+
+    <div class="secLabel">Hibair Drink <small>Violet • canaux</small></div>
+    <div class="card b-violet">
+      <div class="cardHead">
+        <div>
+          <div class="h"><span class="dot"></span>Hibair Drink</div>
+          <div class="meta">facebook / sms / qr / application</div>
+        </div>
+        <span class="chip">hibair</span>
+      </div>
+      <div class="cardBody">
+        <div class="pillRow"><span class="name">Total Hibair</span><span class="n" id="totalHibair">—</span></div>
+        <div class="list" style="margin-top:10px" id="hibairBars">—</div>
+      </div>
+    </div>
+
+    <div class="secLabel">Détails <small>Tech & lecture fine</small></div>
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Liens tracking</div>
+          <div class="meta">Copie/colle</div>
+        </div>
+        <span class="chip">trak</span>
+      </div>
+      <div class="cardBody">
         <div class="mono" id="linksBox">—</div>
       </div>
     </div>
 
-    <!-- 2) Graphique barres (4 projets + couleurs) -->
-    <div class="sectionTitle">
-      <div class="t">Barres</div>
-      <div class="k">apero / catalan / hibair / roue</div>
-    </div>
+    <div style="height:12px"></div>
 
-    <div class="block">
-      <div class="blockHead">
+    <div class="card">
+      <div class="cardHead">
         <div>
-          <div class="blockTitle"><span class="badgeDot" style="background:rgba(255,255,255,.35)"></span> Totaux par projet</div>
-          <div class="blockSub">1 barre = 1 univers</div>
-        </div>
-        <span class="chip">mix clicks + events</span>
-      </div>
-      <div class="blockBody">
-        <div class="twoCols">
-          <div class="miniViz t-nuit" id="vizProjectNuit"></div>
-          <div class="miniViz t-catalan" id="vizProjectCatalan"></div>
-        </div>
-        <div class="twoCols" style="margin-top:10px;">
-          <div class="miniViz t-hibair" id="vizProjectHibair"></div>
-          <div class="miniViz t-wheel" id="vizProjectWheel"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3) OS + Navigateur + Appareil -->
-    <div class="sectionTitle">
-      <div class="t">Système</div>
-      <div class="k">Android / iOS / Chrome / Safari…</div>
-    </div>
-
-    <div class="block">
-      <div class="blockHead">
-        <div>
-          <div class="blockTitle"><span class="badgeDot" style="background:rgba(255,255,255,.35)"></span> Mobile / OS / Navigateur</div>
-          <div class="blockSub">données issues de /api/stats</div>
+          <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Mobile / OS / Navigateur</div>
+          <div class="meta">Android / iOS / Chrome / Safari…</div>
         </div>
         <span class="chip">byDevice/byOS/byBrowser</span>
       </div>
-      <div class="blockBody">
-        <div class="twoCols">
+      <div class="cardBody">
+        <div class="row2">
           <div>
-            <div class="blockSub">Appareil</div>
-            <div class="miniViz" id="vizDevice"></div>
-            <div class="tableWrap" style="margin-top:8px;">
-              <table>
-                <thead><tr><th>Appareil</th><th class="right">N</th></tr></thead>
-                <tbody id="tbodyDevice"></tbody>
-              </table>
-            </div>
+            <div class="meta" style="margin-bottom:6px">Appareil</div>
+            <table><thead><tr><th>Appareil</th><th class="rightTxt">N</th></tr></thead><tbody id="tbodyDevice"></tbody></table>
           </div>
           <div>
-            <div class="blockSub">OS</div>
-            <div class="miniViz" id="vizOS"></div>
-            <div class="tableWrap" style="margin-top:8px;">
-              <table>
-                <thead><tr><th>OS</th><th class="right">N</th></tr></thead>
-                <tbody id="tbodyOS"></tbody>
-              </table>
-            </div>
+            <div class="meta" style="margin-bottom:6px">OS</div>
+            <table><thead><tr><th>OS</th><th class="rightTxt">N</th></tr></thead><tbody id="tbodyOS"></tbody></table>
           </div>
         </div>
-
-        <div style="margin-top:10px;">
-          <div class="blockSub">Navigateur</div>
-          <div class="miniViz" id="vizBrowser"></div>
-          <div class="tableWrap" style="margin-top:8px;">
-            <table>
-              <thead><tr><th>Navigateur</th><th class="right">N</th></tr></thead>
-              <tbody id="tbodyBrowser"></tbody>
-            </table>
-          </div>
+        <div style="margin-top:10px">
+          <div class="meta" style="margin-bottom:6px">Navigateur</div>
+          <table><thead><tr><th>Navigateur</th><th class="rightTxt">N</th></tr></thead><tbody id="tbodyBrowser"></tbody></table>
         </div>
       </div>
     </div>
 
-    <!-- 4) 50 derniers -->
-    <div class="sectionTitle">
-      <div class="t">Derniers</div>
-      <div class="k">50 derniers (clicks + events)</div>
-    </div>
+    <div style="height:12px"></div>
 
-    <div class="block">
-      <div class="blockHead">
+    <div class="card">
+      <div class="cardHead">
         <div>
-          <div class="blockTitle"><span class="badgeDot" style="background:rgba(255,255,255,.35)"></span> Logs</div>
-          <div class="blockSub">OS + Navigateur + Source</div>
+          <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>50 derniers</div>
+          <div class="meta">Mix clicks + events</div>
         </div>
         <span class="chip">last</span>
       </div>
-      <div class="blockBody">
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Nom</th>
-                <th class="hideSm">Src</th>
-                <th class="hideSm">OS</th>
-                <th class="hideSm">Nav</th>
-              </tr>
-            </thead>
-            <tbody id="tbodyLast50"></tbody>
-          </table>
-        </div>
+      <div class="cardBody" style="padding-top:6px">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Nom</th>
+              <th class="hideSm">Src</th>
+              <th class="hideSm">OS</th>
+              <th class="hideSm">Nav</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyLast50"></tbody>
+        </table>
       </div>
     </div>
 
-    <div class="foot" style="text-align:center; padding:16px 0; color: rgba(234,242,255,.55); font-size: 12px;">
-      <button class="btn ghost" id="btnHardReload">Forcer MAJ</button>
-    </div>
-
-    <!-- tables invisibles (remplies par app.js) -->
-    <div style="display:none">
-      <table><tbody id="tbodyCountry"></tbody></table>
+    <div style="height:18px"></div>
+    <div style="text-align:center; color: rgba(231,255,255,.50); font-weight:800; font-size:12px;">
+      ADN66 • Stats
     </div>
   </div>
 
   <script src="./app.js"></script>
-
-  <!-- UI helper pour miniViz + rendu des sections -->
-  <script>
-    (function(){
-      const $ = (id) => document.getElementById(id);
-
-      function toInt(txt){
-        if(!txt) return 0;
-        const n = String(txt).replace(/[^\d]/g,'');
-        return n ? parseInt(n,10) : 0;
-      }
-      function fmt(n){
-        const v = Number(n);
-        if(!Number.isFinite(v)) return "—";
-        return new Intl.NumberFormat("fr-FR").format(v);
-      }
-
-      function normLabelFR(s){
-        const x = String(s || "").trim();
-        const map = {
-          "desktop": "Ordinateur",
-          "mobile": "Téléphone",
-          "Android": "Android",
-          "iOS": "iOS",
-          "Windows": "Windows",
-          "macOS": "macOS",
-          "Chrome": "Chrome",
-          "Safari": "Safari",
-          "Edge": "Edge",
-          "Firefox": "Firefox"
-        };
-        return map[x] || x;
-      }
-
-      function renderMiniViz(containerId, items, themeClass, opts={}){
-        const container = $(containerId);
-        if(!container) return;
-        container.className = "miniViz " + (themeClass || "");
-
-        if(!items || !items.length){
-          container.innerHTML = "";
-          return;
-        }
-
-        const maxItems = opts.maxItems ?? 6;
-        const sorted = items.slice().sort((a,b)=>b.value-a.value);
-        const total = sorted.reduce((s,x)=>s+x.value,0) || 0;
-
-        const top = sorted.slice(0, maxItems);
-        const rest = sorted.slice(maxItems);
-        const otherSum = rest.reduce((s,x)=>s+x.value,0);
-        if(otherSum > 0) top.push({label:"Autres", value: otherSum});
-
-        const maxV = Math.max(...top.map(x=>x.value), 1);
-
-        container.innerHTML = top.map(x=>{
-          const pct = total ? (x.value/total*100) : 0;
-          const w = Math.max(0, Math.min(100, maxV ? (x.value/maxV*100) : 0));
-          return `
-            <div class="miniRow">
-              <div class="miniTop">
-                <div class="lbl" title="${x.label}">${x.label}</div>
-                <div class="val">${fmt(x.value)} <span class="pct">• ${pct.toFixed(0)}%</span></div>
-              </div>
-              <div class="miniTrack"><div class="miniFill" style="width:${w.toFixed(2)}%"></div></div>
-            </div>
-          `;
-        }).join("");
-      }
-
-      function parseSimpleTbody(tbodyId){
-        const tb = $(tbodyId);
-        if(!tb) return [];
-        const rows = Array.from(tb.querySelectorAll("tr"));
-        const out = [];
-        for(const tr of rows){
-          const tds = tr.querySelectorAll("td,th");
-          if(!tds || tds.length < 2) continue;
-          const label = normLabelFR((tds[0].textContent || "").trim());
-          const value = toInt((tds[1].textContent || "").trim());
-          if(label) out.push({label, value});
-        }
-        return out;
-      }
-
-      function sum(items){ return (items||[]).reduce((s,x)=>s+(x.value||0),0); }
-
-      function updateMini(){
-        renderMiniViz("vizDevice", parseSimpleTbody("tbodyDevice"), "");
-        renderMiniViz("vizOS", parseSimpleTbody("tbodyOS"), "");
-        renderMiniViz("vizBrowser", parseSimpleTbody("tbodyBrowser"), "");
-
-        // Projects (values are written as data-attrs by app.js)
-        const p = window.__ADN66_PROJECTS__ || null;
-        if(p){
-          renderMiniViz("vizProjectNuit",    [{label:"Apéro de Nuit", value:p.nuit||0}], "t-nuit", {maxItems: 2});
-          renderMiniViz("vizProjectCatalan", [{label:"Apéro Catalan", value:p.catalan||0}], "t-catalan", {maxItems: 2});
-          renderMiniViz("vizProjectHibair",  [{label:"Hibair Drink", value:p.hibair||0}], "t-hibair", {maxItems: 2});
-          renderMiniViz("vizProjectWheel",   [{label:"Roue", value:p.wheel||0}], "t-wheel", {maxItems: 2});
-        }
-      }
-
-      function boot(){
-        updateMini();
-        const ids = ["tbodyDevice","tbodyOS","tbodyBrowser","tbodyLast50"];
-        const obs = new MutationObserver(() => updateMini());
-        ids.forEach(id=>{
-          const el = $(id);
-          if(el) obs.observe(el, {childList:true, subtree:true, characterData:true});
-        });
-
-        const btn = $("btnRefresh");
-        if(btn) btn.addEventListener("click", () => setTimeout(updateMini, 350));
-      }
-
-      if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
-      else boot();
-    })();
-  </script>
 </body>
 </html>
