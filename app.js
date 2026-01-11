@@ -84,15 +84,41 @@ function paletteForContainer(containerId){
 function barRow(label, n, pct, palette){
   const pctTxt = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
   const w = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
+
+  // Strong gradient + glow (palette-coded)
   const grad = `linear-gradient(90deg, ${palette.c1}, ${palette.c2})`;
+
+  // IMPORTANT: no class names on the bar elements to avoid any CSS overriding them
+  const trackStyle = [
+    "margin-top:8px",
+    "height:16px",
+    "border-radius:999px",
+    "border:1px solid rgba(255,255,255,.28)",
+    "background:rgba(255,255,255,.12)",
+    "overflow:hidden",
+    "position:relative",
+    "z-index:2",
+    "box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(0,0,0,.35)"
+  ].join(";");
+
+  const fillStyle = [
+    "height:100%",
+    `width:${w}%`,
+    "border-radius:999px",
+    `background:${grad}`,
+    "position:relative",
+    "z-index:3",
+    "box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 0 22px rgba(90,255,235,.22)"
+  ].join(";");
+
   return `
     <div class="barRow">
       <div class="barTop">
         <div class="left">${esc(label)}</div>
         <div class="right"><span>${fmt(n)}</span><span style="opacity:.85">•</span><span>${pctTxt}</span></div>
       </div>
-      <div class="barTrack" style="margin-top:8px;height:14px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.10);overflow:hidden;box-shadow: inset 0 1px 0 rgba(255,255,255,.10), inset 0 -1px 0 rgba(0,0,0,.35)">
-        <div class="barFill" style="height:100%;width:${w}%;border-radius:999px;background:${grad};box-shadow: 0 0 0 1px rgba(255,255,255,.10), 0 0 18px rgba(90,255,235,.18)"></div>
+      <div style="${trackStyle}">
+        <div style="${fillStyle}"></div>
       </div>
     </div>
   `;
@@ -290,38 +316,71 @@ async function refresh(){
 }
 
 
-function getTrackingUrls(){
-  // Pure list for copy (not displayed)
+    catch(_){ setStatus("Copie impossible ❌"); }
+    document.body.removeChild(ta);
+  }
+}
+
+
+
+function getTrackingTextLabeled(){
+  // Text copied to clipboard (with meaning)
   return [
-    // APEROS.NET
-    "https://stats.aperos.net/go/jeux?src=direct",
-    "https://stats.aperos.net/e/apero_nuit.app.click?to=https%3A%2F%2Faperos.net&src=app",
-    "https://stats.aperos.net/e/apero_nuit.call?to=tel%3A0652336461&src=app",
-    "https://stats.aperos.net/e/apero_nuit.age.accept?to=https%3A%2F%2Faperos.net&src=agegate",
-    "https://stats.aperos.net/e/apero_nuit.age.refuse?to=https%3A%2F%2Faperos.net&src=agegate",
-    "https://stats.aperos.net/e/apero_nuit.facebook.click?to=https%3A%2F%2Faperos.net&src=facebook",
-    "https://stats.aperos.net/e/apero_nuit.site.click?to=https%3A%2F%2Faperos.net&src=site",
-    // ROUE
-    "https://stats.aperos.net/e/wheel.sms.click?to=https%3A%2F%2Fchance.aperos.net&src=sms",
-    // CATALAN
-    "https://stats.aperos.net/e/apero_catalan.call?to=tel%3A0652336461&src=app",
-    "https://stats.aperos.net/e/apero_catalan.app.click?to=https%3A%2F%2Fcatalan.aperos.net&src=app",
-    "https://stats.aperos.net/e/apero_catalan.age.accept?to=https%3A%2F%2Fcatalan.aperos.net&src=agegate",
-    "https://stats.aperos.net/e/apero_catalan.age.refuse?to=https%3A%2F%2Fcatalan.aperos.net&src=agegate",
-    "https://stats.aperos.net/go/catalan?src=direct",
-    "https://stats.aperos.net/go/catalan?src=facebook",
-    // JEUX (QR / FB)
-    "https://stats.aperos.net/go/jeux?src=qr",
-    "https://stats.aperos.net/go/jeux?src=facebook",
+    "APEROS.NET — Apéro de Nuit 66",
+    "• Bouton Jeux:",
+    "  https://stats.aperos.net/go/jeux?src=direct",
+    "• Bouton Install App:",
+    "  https://stats.aperos.net/e/apero_nuit.app.click?to=https%3A%2F%2Faperos.net&src=app",
+    "• Bouton Appel:",
+    "  https://stats.aperos.net/e/apero_nuit.call?to=tel%3A0652336461&src=app",
+    "",
+    "APEROS.NET — Age Gate",
+    "• Âge accepté:",
+    "  https://stats.aperos.net/e/apero_nuit.age.accept?to=https%3A%2F%2Faperos.net&src=agegate",
+    "• Âge refusé:",
+    "  https://stats.aperos.net/e/apero_nuit.age.refuse?to=https%3A%2F%2Faperos.net&src=agegate",
+    "",
+    "APEROS.NET — Origine",
+    "• Facebook:",
+    "  https://stats.aperos.net/e/apero_nuit.facebook.click?to=https%3A%2F%2Faperos.net&src=facebook",
+    "• Google My Business:",
+    "  https://stats.aperos.net/e/apero_nuit.site.click?to=https%3A%2F%2Faperos.net&src=site",
+    "",
+    "CATALAN.APEROS.NET — Apéro Catalan",
+    "• Bouton Appel:",
+    "  https://stats.aperos.net/e/apero_catalan.call?to=tel%3A0652336461&src=app",
+    "• Bouton Install App:",
+    "  https://stats.aperos.net/e/apero_catalan.app.click?to=https%3A%2F%2Fcatalan.aperos.net&src=app",
+    "",
+    "CATALAN.APEROS.NET — Age Gate",
+    "• Âge accepté:",
+    "  https://stats.aperos.net/e/apero_catalan.age.accept?to=https%3A%2F%2Fcatalan.aperos.net&src=agegate",
+    "• Âge refusé:",
+    "  https://stats.aperos.net/e/apero_catalan.age.refuse?to=https%3A%2F%2Fcatalan.aperos.net&src=agegate",
+    "",
+    "CATALAN.APEROS.NET — Origine (via /go)",
+    "• Google My Business (direct):",
+    "  https://stats.aperos.net/go/catalan?src=direct",
+    "• Facebook:",
+    "  https://stats.aperos.net/go/catalan?src=facebook",
+    "",
+    "HIBAIR DRINK — Accès (via /go/jeux)",
+    "• QR Code:",
+    "  https://stats.aperos.net/go/jeux?src=qr",
+    "• Facebook:",
+    "  https://stats.aperos.net/go/jeux?src=facebook",
+    "",
+    "ROUE DE LA FORTUNE",
+    "• SMS:",
+    "  https://stats.aperos.net/e/wheel.sms.click?to=https%3A%2F%2Fchance.aperos.net&src=sms",
   ].join("\\n");
 }
 async function copyTrackings(){
-  const text = getTrackingUrls();
+  const text = getTrackingTextLabeled();
   try{
     await navigator.clipboard.writeText(text);
     setStatus("Trackings copiés ✅");
   }catch(e){
-    // fallback
     const ta = document.createElement("textarea");
     ta.value = text;
     ta.style.position="fixed";
