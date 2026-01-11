@@ -71,16 +71,29 @@ function getCampaignCountMap(byCampaign){
   return m;
 }
 
-function barRow(label, n, pct){
+
+function paletteForContainer(containerId){
+  // Match your color rules
+  if(String(containerId).startsWith("nuit")) return { c1:"rgba(26,167,255,.95)", c2:"rgba(0,120,255,.85)" }; // blue
+  if(String(containerId).startsWith("cat"))  return { c1:"rgba(255,204,0,.95)", c2:"rgba(255,145,0,.85)" }; // yellow
+  if(String(containerId).startsWith("game")) return { c1:"rgba(166,120,255,.92)", c2:"rgba(120,90,255,.82)" }; // violet
+  // tech neutral
+  return { c1:"rgba(231,255,255,.55)", c2:"rgba(231,255,255,.25)" };
+}
+
+function barRow(label, n, pct, palette){
   const pctTxt = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
   const w = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
+  const grad = `linear-gradient(90deg, ${palette.c1}, ${palette.c2})`;
   return `
     <div class="barRow">
       <div class="barTop">
         <div class="left">${esc(label)}</div>
         <div class="right"><span>${fmt(n)}</span><span style="opacity:.85">•</span><span>${pctTxt}</span></div>
       </div>
-      <div class="barTrack"><div class="barFill" style="width:${w}%"></div></div>
+      <div class="barTrack" style="margin-top:8px;height:12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);overflow:hidden">
+        <div class="barFill" style="height:100%;width:${w}%;border-radius:999px;background:${grad}"></div>
+      </div>
     </div>
   `;
 }
@@ -93,9 +106,10 @@ function renderCompare(containerId, items){
     el.innerHTML = `<div style="opacity:.6">—</div>`;
     return;
   }
+  const pal = paletteForContainer(containerId);
   el.innerHTML = clean.map(x=>{
     const pct = total ? (x.n/total*100) : 0;
-    return barRow(x.label, x.n, pct);
+    return barRow(x.label, x.n, pct, pal);
   }).join("");
 }
 
@@ -275,9 +289,57 @@ async function refresh(){
   }
 }
 
+
+function getTrackingUrls(){
+  // Pure list for copy (not displayed)
+  return [
+    // APEROS.NET
+    "https://stats.aperos.net/go/jeux?src=direct",
+    "https://stats.aperos.net/e/apero_nuit.app.click?to=https%3A%2F%2Faperos.net&src=app",
+    "https://stats.aperos.net/e/apero_nuit.call?to=tel%3A0652336461&src=app",
+    "https://stats.aperos.net/e/apero_nuit.age.accept?to=https%3A%2F%2Faperos.net&src=agegate",
+    "https://stats.aperos.net/e/apero_nuit.age.refuse?to=https%3A%2F%2Faperos.net&src=agegate",
+    "https://stats.aperos.net/e/apero_nuit.facebook.click?to=https%3A%2F%2Faperos.net&src=facebook",
+    "https://stats.aperos.net/e/apero_nuit.site.click?to=https%3A%2F%2Faperos.net&src=site",
+    // ROUE
+    "https://stats.aperos.net/e/wheel.sms.click?to=https%3A%2F%2Fchance.aperos.net&src=sms",
+    // CATALAN
+    "https://stats.aperos.net/e/apero_catalan.call?to=tel%3A0652336461&src=app",
+    "https://stats.aperos.net/e/apero_catalan.app.click?to=https%3A%2F%2Fcatalan.aperos.net&src=app",
+    "https://stats.aperos.net/e/apero_catalan.age.accept?to=https%3A%2F%2Fcatalan.aperos.net&src=agegate",
+    "https://stats.aperos.net/e/apero_catalan.age.refuse?to=https%3A%2F%2Fcatalan.aperos.net&src=agegate",
+    "https://stats.aperos.net/go/catalan?src=direct",
+    "https://stats.aperos.net/go/catalan?src=facebook",
+    // JEUX (QR / FB)
+    "https://stats.aperos.net/go/jeux?src=qr",
+    "https://stats.aperos.net/go/jeux?src=facebook",
+  ].join("\\n");
+}
+async function copyTrackings(){
+  const text = getTrackingUrls();
+  try{
+    await navigator.clipboard.writeText(text);
+    setStatus("Trackings copiés ✅");
+  }catch(e){
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position="fixed";
+    ta.style.left="-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); setStatus("Trackings copiés ✅"); }
+    catch(_){ setStatus("Copie impossible ❌"); }
+    document.body.removeChild(ta);
+  }
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
   $("btnRefresh")?.addEventListener("click", refresh);
   $("btnInfos")?.addEventListener("click", openModal);
+  $("btnCopyTrack")?.addEventListener("click", copyTrackings);
+  $("btnCopyTrack")?.addEventListener("pointerdown", (e)=>{ e.preventDefault(); copyTrackings(); });
   $("btnInfos")?.addEventListener("pointerdown", (e)=>{ e.preventDefault(); openModal(); });
   $("btnClose")?.addEventListener("click", closeModal);
   $("modalBack")?.addEventListener("click", (e)=>{ if(e.target?.id==="modalBack") closeModal(); });
