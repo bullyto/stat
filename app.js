@@ -91,12 +91,12 @@ function barRow(label, n, pct, palette){
     "margin-top:8px",
     "height:16px",
     "border-radius:999px",
-    "border:1px solid rgba(255,255,255,.30)",
+    "border:1px solid rgba(255,255,255,.28)",
     "background:rgba(255,255,255,.12)",
     "overflow:hidden",
     "position:relative",
     "z-index:2",
-    "box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1px 0 rgba(0,0,0,.40)"
+    "box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(0,0,0,.35)"
   ].join(";");
 
   const fillStyle = [
@@ -121,7 +121,6 @@ function barRow(label, n, pct, palette){
     </div>
   `;
 }
-
 function renderCompare(containerId, items){
   const el = $(containerId);
   if(!el) return;
@@ -315,6 +314,11 @@ async function refresh(){
 }
 
 
+
+
+
+
+
 function getTrackingTextLabeled(){
   return [
     "APEROS.NET — Apéro de Nuit 66",
@@ -363,8 +367,8 @@ function getTrackingTextLabeled(){
     "",
     "ROUE DE LA FORTUNE",
     "• SMS:",
-    "  https://stats.aperos.net/e/wheel.sms.click?to=https%3A%2F%2Fchance.aperos.net&src=sms"
-  ].join("\n");
+    "  https://stats.aperos.net/e/wheel.sms.click?to=https%3A%2F%2Fchance.aperos.net&src=sms",
+  ].join("\\n");
 }
 
 async function copyTrackings(){
@@ -375,25 +379,25 @@ async function copyTrackings(){
   }catch(e){
     const ta = document.createElement("textarea");
     ta.value = text;
-    ta.style.position="fixed";
-    ta.style.left="-9999px";
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
     document.body.appendChild(ta);
     ta.select();
-    try{ document.execCommand("copy"); setStatus("Trackings copiés ✅"); }
-    catch(_){ setStatus("Copie impossible ❌"); }
+    try{
+      document.execCommand("copy");
+      setStatus("Trackings copiés ✅");
+    }catch(_){
+      setStatus("Copie impossible ❌");
+    }
     document.body.removeChild(ta);
   }
 }
-
-    catch(_){ setStatus("Copie impossible ❌"); }
-    document.body.removeChild(ta);
-  }
-}
-
 
 document.addEventListener("DOMContentLoaded", () => {
   $("btnRefresh")?.addEventListener("click", refresh);
   $("btnInfos")?.addEventListener("click", openModal);
+  $("btnCopyTrack")?.addEventListener("click", copyTrackings);
+  $("btnCopyTrack")?.addEventListener("pointerdown", (e)=>{ e.preventDefault(); copyTrackings(); });
   $("btnCopyTrack")?.addEventListener("click", copyTrackings);
   $("btnCopyTrack")?.addEventListener("pointerdown", (e)=>{ e.preventDefault(); copyTrackings(); });
   $("btnInfos")?.addEventListener("pointerdown", (e)=>{ e.preventDefault(); openModal(); });
