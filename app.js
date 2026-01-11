@@ -91,8 +91,8 @@ function barRow(label, n, pct, palette){
         <div class="left">${esc(label)}</div>
         <div class="right"><span>${fmt(n)}</span><span style="opacity:.85">•</span><span>${pctTxt}</span></div>
       </div>
-      <div class="barTrack" style="margin-top:8px;height:12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);overflow:hidden">
-        <div class="barFill" style="height:100%;width:${w}%;border-radius:999px;background:${grad}"></div>
+      <div class="barTrack" style="margin-top:8px;height:14px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.10);overflow:hidden;box-shadow: inset 0 1px 0 rgba(255,255,255,.10), inset 0 -1px 0 rgba(0,0,0,.35)">
+        <div class="barFill" style="height:100%;width:${w}%;border-radius:999px;background:${grad};box-shadow: 0 0 0 1px rgba(255,255,255,.10), 0 0 18px rgba(90,255,235,.18)"></div>
       </div>
     </div>
   `;
