@@ -1,17 +1,8 @@
-/* ADN66 Stats — UI final (style capture)
-   - Comparatif Nuit vs Catalan (events.byBrand)
-   - Blocs par univers avec barres (events.byEvent + clicks pour Hibair)
-   - 50 derniers (mix)
-   - Device/OS/Browser
-   - Liens tracking (format ADN66)
-*/
-
 const ORIGIN = "https://stats.aperos.net";
 const API_STATS = `${ORIGIN}/api/stats`;
 const API_HEALTH = `${ORIGIN}/api/health`;
 
 const $ = (id) => document.getElementById(id);
-
 function setText(id, v){ const el=$(id); if(el) el.textContent = (v ?? ""); }
 function setHTML(id, v){ const el=$(id); if(el) el.innerHTML = (v ?? ""); }
 
@@ -37,82 +28,19 @@ function setStatus(msg){
 async function fetchJson(url){
   const res = await fetch(url, { cache:"no-store" });
   const text = await res.text();
-  if(!res.ok) throw new Error(`HTTP ${res.status} — ${(text||"").slice(0,180)}`);
+  if(!res.ok) throw new Error(`HTTP ${res.status} — ${(text||"").slice(0,160)}`);
   const t = text.trim();
   if(!(t.startsWith("{")||t.startsWith("["))) throw new Error("Réponse non JSON");
   return JSON.parse(text);
 }
 
-// -------- Links text (exact user format)
-function linksText(){
-return `APERO.NET :
-BOUTON JEUX : https://stats.aperos.net/go/jeux?src=direct
-BOUTON INSTAL APP : https://stats.aperos.net/e/apero_nuit.app.click?to=https%3A%2F%2Faperos.net&src=app
-BOUTON APPEL : https://stats.aperos.net/e/apero_nuit.call?to=tel%3A0652336461&src=app
-
-BOUTON AGE GATE APERO DE NUIT:
-Accepte :https://stats.aperos.net/e/apero_nuit.age.accept?to=https%3A%2F%2Faperos.net&src=agegate
-refuse : https://stats.aperos.net/e/apero_nuit.age.refuse?to=https%3A%2F%2Faperos.net&src=agegate
-
-
-apero de nuit via Facebook :
-https://stats.aperos.net/e/apero_nuit.facebook.click?to=https%3A%2F%2Faperos.net&src=facebook
-
-apero de nuit via google my buisness :
-https://stats.aperos.net/e/apero_nuit.site.click?to=https%3A%2F%2Faperos.net&src=site
-
-ROUE DE LA FORTUNE :
-https://stats.aperos.net/e/wheel.sms.click?to=https%3A%2F%2Fchance.aperos.net&src=sms
-
-
-catalan.aperos.net :
-BOUTTON APPEL : https://stats.aperos.net/e/apero_catalan.call?to=tel%3A0652336461&src=app
-BONTON INSTALL APP : https://stats.aperos.net/e/apero_catalan.app.click?to=https%3A%2F%2Fcatalan.aperos.net&src=app
-
-BOUTON AGE GATE 
-accepte : https://stats.aperos.net/e/apero_catalan.age.accept?to=https%3A%2F%2Fcatalan.aperos.net&src=agegate
-refuse : https://stats.aperos.net/e/apero_catalan.age.refuse?to=https%3A%2F%2Fcatalan.aperos.net&src=agegate
-
-
-apero catalan via google my buisness :
-https://stats.aperos.net/go/catalan?src=direct
-
-apero catalan via facebook :
-https://stats.aperos.net/go/catalan?src=facebook
-
-le jeux hibair drink via QR code :
-https://stats.aperos.net/go/jeux?src=qr
-
-le jeux hibair drink via facebook :
-https://stats.aperos.net/go/jeux?src=facebook`;
-}
-
-function renderLinks(){
-  const raw = linksText();
-  const urlRe = /(https?:\/\/[^\s]+)/g;
-  const html = esc(raw).replace(urlRe, (m)=>`<a href="${m}" target="_blank" rel="noopener">${m}</a>`).replaceAll("\n","<br>");
-  setHTML("linksBox", html);
-}
-
-async function copyLinks(){
-  try{
-    await navigator.clipboard.writeText(linksText());
-    setStatus("Liens copiés ✅");
-  }catch{
-    setStatus("Copie bloquée (navigateur)");
-  }
-}
-
-// -------- Helpers for stats shapes
 function normalizeStats(d){
   const byDevice = Array.isArray(d.byDevice) ? d.byDevice : [];
-  const byOS = Array.isArray(d.byOS) ? d.byOS : [];
   const byBrowser = Array.isArray(d.byBrowser) ? d.byBrowser : [];
   const byCampaign = Array.isArray(d.byCampaign) ? d.byCampaign : [];
   const lastClicks = Array.isArray(d.last) ? d.last : [];
 
   const ev = (d && typeof d.events === "object" && d.events) ? d.events : {};
-  const byBrand = Array.isArray(ev.byBrand) ? ev.byBrand : [];
   const byEvent = Array.isArray(ev.byEvent) ? ev.byEvent : [];
   const lastEvents = Array.isArray(ev.last) ? ev.last : [];
 
@@ -121,20 +49,27 @@ function normalizeStats(d){
     todayEvents: Number(ev.todayTotal ?? ev.today ?? d.today ?? NaN),
   };
 
-  return { byDevice, byOS, byBrowser, byCampaign, lastClicks, byBrand, byEvent, lastEvents, totals };
+  return { byDevice, byBrowser, byCampaign, lastClicks, byEvent, lastEvents, totals };
 }
 
-function renderSimpleRows(tbodyId, rows, kKey, vKey){
-  const tb = $(tbodyId);
-  if(!tb) return;
-  const list = (rows||[]).map(r=>({k: String(r[kKey] ?? "").trim() || "?", v: Number(r[vKey] ?? 0)}))
-    .sort((a,b)=>b.v-a.v);
-  tb.innerHTML = list.length
-    ? list.map(x=>`<tr><td>${esc(x.k)}</td><td class="rightTxt">${fmt(x.v)}</td></tr>`).join("")
-    : `<tr><td colspan="2" style="opacity:.6">—</td></tr>`;
+function getEventCountMap(byEvent){
+  const m = {};
+  for(const r of (byEvent||[])){
+    const k = String(r.k ?? r.event_key ?? r.key ?? "").trim();
+    if(!k) continue;
+    m[k] = Number(r.n ?? 0);
+  }
+  return m;
 }
-
-function sum(list){ return (list||[]).reduce((s,x)=>s+Number(x.n ?? x.value ?? 0),0); }
+function getCampaignCountMap(byCampaign){
+  const m = {};
+  for(const r of (byCampaign||[])){
+    const k = String(r.campaign ?? "").toLowerCase();
+    if(!k) continue;
+    m[k] = Number(r.n ?? 0);
+  }
+  return m;
+}
 
 function barRow(label, n, pct){
   const pctTxt = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
@@ -143,157 +78,32 @@ function barRow(label, n, pct){
     <div class="barRow">
       <div class="barTop">
         <div class="left">${esc(label)}</div>
-        <div class="right"><span>${fmt(n)}</span><span style="opacity:.85">•</span><span style="opacity:.95">${pctTxt}</span></div>
+        <div class="right"><span>${fmt(n)}</span><span style="opacity:.85">•</span><span>${pctTxt}</span></div>
       </div>
       <div class="barTrack"><div class="barFill" style="width:${w}%"></div></div>
     </div>
   `;
 }
-
-function labelEventNice(eventKey){
-  const k = String(eventKey||"").trim();
-
-  // Common mappings
-  const m = {
-    "facebook.click": "Facebook",
-    "site.click": "Site",
-    "app.click": "Application",
-    "qr.click": "QR",
-    "sms.click": "SMS",
-    "call": "Bouton appeler",
-    "age.accept": "Accepter l’âge",
-    "age.refuse": "Refuser l’âge",
-  };
-
-  // wheel.*
-  if(k.startsWith("wheel.")){
-    const tail = k.slice("wheel.".length);
-    for(const [t,lab] of Object.entries(m)){
-      if(tail === t) return `Roue de la fortune — ${lab}`;
-    }
-    return `Roue — ${tail}`;
-  }
-
-  // apero_nuit.*
-  if(k.startsWith("apero_nuit.")){
-    const tail = k.slice("apero_nuit.".length);
-    for(const [t,lab] of Object.entries(m)){
-      if(tail === t) return `Apéro de Nuit 66 — ${lab}`;
-    }
-    return `Apéro de Nuit 66 — ${tail}`;
-  }
-
-  // apero_catalan.*
-  if(k.startsWith("apero_catalan.")){
-    const tail = k.slice("apero_catalan.".length);
-    for(const [t,lab] of Object.entries(m)){
-      if(tail === t) return `Apéro Catalan — ${lab}`;
-    }
-    return `Apéro Catalan — ${tail}`;
-  }
-
-  return k;
-}
-
-function renderBrandBars(containerId, rows, total){
+function renderCompare(containerId, items){
   const el = $(containerId);
   if(!el) return;
-  const list = (rows||[]).slice().sort((a,b)=>b.n-a.n);
-  if(!list.length){
+  const clean = (items||[]).map(x=>({label:x.label, n:Number(x.n||0)}));
+  const total = clean.reduce((s,x)=>s+x.n,0) || 0;
+  if(!total){
     el.innerHTML = `<div style="opacity:.6">—</div>`;
     return;
   }
-  const t = total || list.reduce((s,x)=>s+x.n,0) || 0;
-  el.innerHTML = list.map(x=>{
-    const pct = t ? (x.n / t * 100) : 0;
+  el.innerHTML = clean.map(x=>{
+    const pct = total ? (x.n/total*100) : 0;
     return barRow(x.label, x.n, pct);
   }).join("");
 }
 
-function getBrandTotals(byBrand){
-  const map = {};
-  for(const r of (byBrand||[])){
-    const b = String(r.brand ?? r.k ?? r.key ?? "").trim();
-    if(!b) continue;
-    map[b] = Number(r.n ?? 0);
-  }
-  return map;
-}
-
-function filterByPrefix(byEvent, prefix){
-  const out = [];
-  for(const r of (byEvent||[])){
-    const key = String(r.k ?? r.event_key ?? r.key ?? "").trim();
-    if(!key.startsWith(prefix)) continue;
-    out.push({ key, n: Number(r.n ?? 0) });
-  }
-  return out;
-}
-
-function groupHibairFromStats(s){
-  // Prefer an explicit breakdown if API provides one
-  const candidates = [
-    s.byCampaignSource, s.byCampaignBySource, s.campaignBySource,
-    s.bySourceCampaign, s.bySourceByCampaign
-  ];
-  for(const c of candidates){
-    if(Array.isArray(c)){
-      const rows = c.filter(x => String(x.campaign ?? x.c ?? "").toLowerCase() === "jeux")
-        .map(x => ({ src: String(x.source ?? x.src ?? "").toLowerCase(), n: Number(x.n ?? 0) }));
-      if(rows.length) return rows;
-    }
-  }
-
-  // Fallback: build from last clicks (approx)
-  const rows = {};
-  for(const r of (s.lastClicks||[])){
-    if(String(r.campaign ?? "").toLowerCase() !== "jeux") continue;
-    const src = String(r.source ?? r.src ?? "direct").toLowerCase();
-    rows[src] = (rows[src] || 0) + 1;
-  }
-  return Object.entries(rows).map(([src,n])=>({src,n}));
-}
-
-function normalizeHibairLabel(src){
-  const x = String(src||"").toLowerCase();
-  if(x.includes("app")) return "Hibair Drink — Application";
-  if(x.includes("face")) return "Hibair Drink — Facebook";
-  if(x.includes("qr")) return "Hibair Drink — QR";
-  if(x.includes("sms")) return "Hibair Drink — SMS";
-  if(x.includes("direct")) return "Hibair Drink — Direct";
-  return `Hibair Drink — ${src}`;
-}
-
-function renderComparatif(byBrand){
-  // only Nuit/Catalan
-  const map = getBrandTotals(byBrand);
-  const nuit = Number(map.apero_nuit ?? map.nuit ?? 0);
-  const catalan = Number(map.apero_catalan ?? map.catalan ?? 0);
-
-  const listEl = $("cmpList");
-  const barsEl = $("cmpBars");
-  if(listEl){
-    listEl.innerHTML = [
-      `<div class="pillRow"><span class="name">Apéro de Nuit 66</span><span class="n">${fmt(nuit)}</span></div>`,
-      `<div class="pillRow"><span class="name">Apéro Catalan</span><span class="n">${fmt(catalan)}</span></div>`
-    ].join("");
-  }
-  if(barsEl){
-    // replicate screenshot style: each item alone => 100%
-    barsEl.innerHTML = [
-      barRow("Apéro de Nuit 66", nuit, 100),
-      barRow("Apéro Catalan", catalan, 100)
-    ].join("");
-  }
-}
-
-// -------- last 50 (mix clicks + events)
 function parseDateAny(v){
   const s = String(v ?? "").trim();
   if(!s) return null;
   const d = new Date(s);
   if(!Number.isNaN(d.getTime())) return d;
-
   const n = Number(s);
   if(Number.isFinite(n)){
     const ms = n > 1e12 ? n : n*1000;
@@ -307,24 +117,10 @@ function fmtDate(d){
   catch{ return d.toISOString(); }
 }
 function normalizeClick(r){
-  return {
-    kind: "click",
-    date: parseDateAny(r.created_at ?? r.ts ?? r.date),
-    name: String(r.campaign ?? ""),
-    src: String(r.source ?? r.src ?? ""),
-    os: String(r.os ?? ""),
-    browser: String(r.browser ?? ""),
-  };
+  return { kind:"click", date: parseDateAny(r.created_at ?? r.ts ?? r.date), name:String(r.campaign ?? ""), src:String(r.source ?? r.src ?? ""), os:String(r.os ?? ""), browser:String(r.browser ?? "") };
 }
 function normalizeEvent(r){
-  return {
-    kind: "event",
-    date: parseDateAny(r.ts ?? r.created_at ?? r.date),
-    name: String(r.event_key ?? r.k ?? r.key ?? ""),
-    src: String(r.src ?? r.source ?? ""),
-    os: String(r.os ?? ""),
-    browser: String(r.browser ?? ""),
-  };
+  return { kind:"event", date: parseDateAny(r.ts ?? r.created_at ?? r.date), name:String(r.event_key ?? r.k ?? r.key ?? ""), src:String(r.src ?? r.source ?? ""), os:String(r.os ?? ""), browser:String(r.browser ?? "") };
 }
 function renderLast50(lastClicks, lastEvents){
   const tb = $("tbodyLast50");
@@ -340,7 +136,7 @@ function renderLast50(lastClicks, lastEvents){
     <tr>
       <td>${esc(fmtDate(x.date))}</td>
       <td>${esc(x.kind)}</td>
-      <td>${esc(x.kind==="event" ? labelEventNice(x.name) : x.name)}</td>
+      <td>${esc(x.name)}</td>
       <td class="hideSm">${esc(x.src || "")}</td>
       <td class="hideSm">${esc(x.os || "")}</td>
       <td class="hideSm">${esc(x.browser || "")}</td>
@@ -348,25 +144,94 @@ function renderLast50(lastClicks, lastEvents){
   `).join("");
 }
 
-// -------- main render
-function computeTotalEvents(byBrand){
-  const map = getBrandTotals(byBrand);
-  // sum of all brands in events.byBrand
-  return Object.values(map).reduce((s,n)=>s+Number(n||0),0);
-}
-
 function computeTodayFallback(s){
-  // If API doesn't return today totals, approximate with today's events in lastEvents
   const now = new Date();
-  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-  const start = new Date(y,m,d,0,0,0,0).getTime();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0).getTime();
   let count = 0;
   for(const r of (s.lastEvents||[])){
     const dt = parseDateAny(r.ts ?? r.created_at ?? r.date);
-    if(!dt) continue;
-    if(dt.getTime() >= start) count++;
+    if(dt && dt.getTime() >= start) count++;
   }
   return count || NaN;
+}
+
+function buildComparisons(s){
+  const E = getEventCountMap(s.byEvent);
+  const C = getCampaignCountMap(s.byCampaign);
+
+  // APEROS.NET
+  const nuitJeux = Number(C.jeux ?? 0);
+  const nuitInstall = Number(E["apero_nuit.app.click"] ?? 0);
+  const nuitCall = Number(E["apero_nuit.call"] ?? 0);
+
+  const nuitAgeOk = Number(E["apero_nuit.age.accept"] ?? 0);
+  const nuitAgeNo = Number(E["apero_nuit.age.refuse"] ?? 0);
+
+  const nuitFb = Number(E["apero_nuit.facebook.click"] ?? 0);
+  const nuitGmb = Number(E["apero_nuit.site.click"] ?? 0);
+
+  // CATALAN
+  const catInstall = Number(E["apero_catalan.app.click"] ?? 0);
+  const catCall = Number(E["apero_catalan.call"] ?? 0);
+
+  const catAgeOk = Number(E["apero_catalan.age.accept"] ?? 0);
+  const catAgeNo = Number(E["apero_catalan.age.refuse"] ?? 0);
+
+  // Catalan source split is /go links; without API bySource, we can't split reliably.
+  // We display an informative message in UI (handled below).
+
+  // Gamification
+  const hibair = Number(C.jeux ?? 0);
+  const wheel = Number(E["wheel.sms.click"] ?? 0);
+
+  return {
+    nuitIntent: [
+      {label:"Jeux", n:nuitJeux},
+      {label:"Install app", n:nuitInstall},
+      {label:"Appel", n:nuitCall},
+    ],
+    nuitAge: [
+      {label:"Âge accepté", n:nuitAgeOk},
+      {label:"Âge refusé", n:nuitAgeNo},
+    ],
+    nuitSource: [
+      {label:"Facebook", n:nuitFb},
+      {label:"Google My Business", n:nuitGmb},
+    ],
+    catIntent: [
+      {label:"Install app", n:catInstall},
+      {label:"Appel", n:catCall},
+    ],
+    catAge: [
+      {label:"Âge accepté", n:catAgeOk},
+      {label:"Âge refusé", n:catAgeNo},
+    ],
+    gameCompare: [
+      {label:"Hibair Drink", n:hibair},
+      {label:"Roue de la fortune", n:wheel},
+    ],
+    techDevice: (s.byDevice||[]).map(r=>({label:String(r.device??"?"), n:Number(r.n??0)})).slice(0,10),
+    techBrowser: (s.byBrowser||[]).map(r=>({label:String(r.browser??"?"), n:Number(r.n??0)})).slice(0,10),
+  };
+}
+
+function registerSW(){
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("./service-worker.js").catch(()=>{});
+  }
+}
+
+function openModal(){
+  const back = $("modalBack");
+  if(!back) return;
+  back.style.display = "flex";
+  back.setAttribute("aria-hidden","false");
+}
+function closeModal(){
+  const back = $("modalBack");
+  if(!back) return;
+  back.style.display = "none";
+  back.setAttribute("aria-hidden","true");
 }
 
 async function refresh(){
@@ -375,50 +240,29 @@ async function refresh(){
     try{ await fetch(API_HEALTH, {cache:"no-store"}); }catch{}
     const raw = await fetchJson(API_STATS);
     if(raw && raw.ok === false) throw new Error(raw.error || "API ok=false");
-
     const s = normalizeStats(raw);
 
-    // totals
-    const total = Number.isFinite(s.totals.totalEvents) ? s.totals.totalEvents : computeTotalEvents(s.byBrand);
-    setText("totalEvents", fmt(total));
+    const total = Number.isFinite(s.totals.totalEvents) ? s.totals.totalEvents : NaN;
+    setText("totalEvents", Number.isFinite(total) ? fmt(total) : "—");
 
     const today = Number.isFinite(s.totals.todayEvents) ? s.totals.todayEvents : computeTodayFallback(s);
-    setText("todayEvents", Number.isFinite(today) ? fmt(today) : fmt(total));
+    setText("todayEvents", Number.isFinite(today) ? fmt(today) : "—");
 
-    // comparatif
-    renderComparatif(s.byBrand);
+    const cmp = buildComparisons(s);
 
-    // brand blocks from events.byEvent
-    const nuitRows = filterByPrefix(s.byEvent, "apero_nuit.").map(x=>({label: labelEventNice(x.key), n:x.n}));
-    const catalanRows = filterByPrefix(s.byEvent, "apero_catalan.").map(x=>({label: labelEventNice(x.key), n:x.n}));
-    const wheelRows = filterByPrefix(s.byEvent, "wheel.").map(x=>({label: labelEventNice(x.key), n:x.n}));
+    renderCompare("nuitIntent", cmp.nuitIntent);
+    renderCompare("nuitAge", cmp.nuitAge);
+    renderCompare("nuitSource", cmp.nuitSource);
 
-    const brandTotals = getBrandTotals(s.byBrand);
-    const totalNuit = Number(brandTotals.apero_nuit ?? brandTotals.nuit ?? nuitRows.reduce((a,b)=>a+b.n,0) ?? 0);
-    const totalCatalan = Number(brandTotals.apero_catalan ?? brandTotals.catalan ?? catalanRows.reduce((a,b)=>a+b.n,0) ?? 0);
-    const totalWheel = wheelRows.reduce((a,b)=>a+b.n,0);
+    renderCompare("catIntent", cmp.catIntent);
+    renderCompare("catAge", cmp.catAge);
 
-    setText("totalNuit", fmt(totalNuit));
-    setText("totalCatalan", fmt(totalCatalan));
-    setText("totalWheel", fmt(totalWheel));
+    setHTML("catSource", `<div style="opacity:.65">Comparatif Facebook/Google pour Catalan : OK quand tu auras des events dédiés (ex: apero_catalan.facebook.click / apero_catalan.site.click) ou un split /go par source exposé dans l’API.</div>`);
 
-    renderBrandBars("nuitBars", nuitRows, totalNuit);
-    renderBrandBars("catalanBars", catalanRows, totalCatalan);
-    renderBrandBars("wheelBars", wheelRows, totalWheel);
+    renderCompare("gameCompare", cmp.gameCompare);
+    renderCompare("devBars", cmp.techDevice);
+    renderCompare("browserBars", cmp.techBrowser);
 
-    // hibair from clicks (campaign jeux)
-    const hib = groupHibairFromStats(s);
-    const hibRows = (hib||[]).map(x=>({label: normalizeHibairLabel(x.src), n: x.n})).sort((a,b)=>b.n-a.n);
-    const totalHibair = hibRows.reduce((a,b)=>a+b.n,0);
-    setText("totalHibair", fmt(totalHibair));
-    renderBrandBars("hibairBars", hibRows, totalHibair);
-
-    // tech tables
-    renderSimpleRows("tbodyDevice", s.byDevice, "device", "n");
-    renderSimpleRows("tbodyOS", s.byOS, "os", "n");
-    renderSimpleRows("tbodyBrowser", s.byBrowser, "browser", "n");
-
-    // last 50
     renderLast50(s.lastClicks, s.lastEvents);
 
     setStatus("OK ✅");
@@ -428,17 +272,13 @@ async function refresh(){
   }
 }
 
-// PWA SW
-function registerSW(){
-  if("serviceWorker" in navigator){
-    navigator.serviceWorker.register("./service-worker.js").catch(()=>{});
-  }
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-  renderLinks();
-  const br = $("btnRefresh"); if(br) br.addEventListener("click", refresh);
-  const bc = $("btnCopyLinks"); if(bc) bc.addEventListener("click", copyLinks);
+  $("btnRefresh")?.addEventListener("click", refresh);
+  $("btnInfos")?.addEventListener("click", openModal);
+  $("btnClose")?.addEventListener("click", closeModal);
+  $("modalBack")?.addEventListener("click", (e)=>{ if(e.target?.id==="modalBack") closeModal(); });
+  document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeModal(); });
+
   registerSW();
   refresh();
 });

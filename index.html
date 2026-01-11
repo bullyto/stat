@@ -7,35 +7,61 @@
   <title>Stats • ADN66</title>
 
   <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" href="./icon-192.png" />
-  <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="./style.css" />
 
-  <!-- Ajustements pour coller au rendu des captures (cards + bar rows) -->
   <style>
     :root{
       --r:18px;
-      --cardGlass: rgba(255,255,255,.035);
       --line: rgba(231,255,255,.12);
       --line2: rgba(231,255,255,.08);
+      --ink: rgba(231,255,255,.92);
+      --muted: rgba(231,255,255,.60);
 
-      --blue:#1aa7ff;
-      --yellow:#ffcc00;
-      --violet:#a678ff;
-      --red:#ff3b4d; /* roue */
+      --blue:#1aa7ff;     /* apéro de nuit */
+      --yellow:#ffcc00;   /* catalan */
+      --violet:#a678ff;   /* hibair */
+      --red:#ff3b4d;      /* roue */
+
       --chip: rgba(90,255,235,.11);
       --chipLine: rgba(140,255,235,.26);
     }
-    body{ background: radial-gradient(1100px 730px at 15% 10%, rgba(26,167,255,.12), transparent 55%),
-                     radial-gradient(900px 640px at 85% 15%, rgba(255,204,0,.07), transparent 55%),
-                     linear-gradient(180deg, #040b16, #071a22) !important; }
-    .wrap{ max-width: 980px; margin: 0 auto; padding: 14px 12px 28px; }
+    body{
+      background:
+        radial-gradient(1100px 730px at 15% 10%, rgba(26,167,255,.12), transparent 55%),
+        radial-gradient(900px 640px at 85% 15%, rgba(255,204,0,.07), transparent 55%),
+        linear-gradient(180deg, #040b16, #071a22) !important;
+      color: var(--ink) !important;
+    }
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 14px 12px 32px; }
     .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     @media(max-width:760px){ .row2{ grid-template-columns:1fr; } }
 
     .titleRow{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; padding: 10px 4px 6px; }
     .titleRow h1{ margin:0; font-size: 20px; letter-spacing:.6px; text-transform: uppercase; }
-    .titleRow .sub{ color: rgba(231,255,255,.62); font-weight: 700; font-size: 12px; }
+    .titleRow .sub{ color: var(--muted); font-weight: 700; font-size: 12px; }
+
+    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; }
+    .btn{
+      border: 1px solid rgba(231,255,255,.14);
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      color: rgba(231,255,255,.92);
+      padding: 10px 12px;
+      font-weight: 950;
+      cursor:pointer;
+    }
+    .btn.primary{
+      border:0;
+      background: linear-gradient(135deg, rgba(26,167,255,.95), rgba(0,120,255,.85));
+      color: rgba(3,10,18,.92);
+      box-shadow: 0 16px 28px rgba(0,0,0,.25);
+    }
+
+    .statusLine{
+      margin: 8px 4px 2px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      color: rgba(231,255,255,.55); font-weight: 800; font-size: 12px;
+    }
 
     .card{
       border-radius: var(--r);
@@ -49,12 +75,13 @@
       display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
       border-bottom: 1px solid var(--line2);
     }
-    .cardHead .h{
+    .h{
       display:flex; align-items:center; gap:10px;
-      font-weight: 950; letter-spacing:.6px; text-transform: uppercase; font-size: 14px;
+      font-weight: 950; letter-spacing:.6px; text-transform: uppercase; font-size: 13px;
     }
     .dot{ width:10px; height:10px; border-radius:999px; border:1px solid rgba(255,255,255,.16); }
-    .meta{ color: rgba(231,255,255,.60); font-weight: 750; margin-top: 4px; }
+    .meta{ color: var(--muted); font-weight: 750; margin-top: 4px; font-size: 12px; }
+
     .chip{
       font-weight: 900;
       padding: 7px 10px;
@@ -63,26 +90,23 @@
       background: var(--chip);
       color: rgba(231,255,255,.80);
       white-space: nowrap;
+      font-size: 12px;
     }
     .cardBody{ padding: 12px 14px 14px; }
 
     .bigNum{ font-size: 44px; font-weight: 950; line-height: 1; margin-top: 2px; }
     .bigLbl{ color: rgba(231,255,255,.55); font-weight: 800; margin-top: 2px; }
 
-    .list{
-      display:flex; flex-direction:column; gap: 10px;
+    .secLabel{
+      margin: 16px 4px 8px;
+      display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+      color: rgba(231,255,255,.72);
+      font-weight: 950; letter-spacing:.7px; text-transform: uppercase;
+      font-size: 12px;
     }
-    .pillRow{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding: 14px 14px;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.08);
-      background: rgba(255,255,255,.03);
-      font-weight: 900;
-    }
-    .pillRow .name{ color: rgba(231,255,255,.88); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 68%; }
-    .pillRow .n{ color: rgba(231,255,255,.92); }
+    .secLabel small{ color: rgba(231,255,255,.50); font-weight: 850; text-transform:none; letter-spacing:0; }
 
+    .list{ display:flex; flex-direction:column; gap:10px; }
     .barRow{
       padding: 12px 12px 12px;
       border-radius: 16px;
@@ -92,10 +116,9 @@
     .barTop{
       display:flex; align-items:center; justify-content:space-between; gap:10px;
       font-weight: 950;
+      font-size: 13px;
     }
-    .barTop .left{
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 70%;
-    }
+    .barTop .left{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 72%; }
     .barTop .right{
       white-space: nowrap;
       color: rgba(231,255,255,.90);
@@ -111,26 +134,6 @@
     }
     .barFill{ height:100%; width:0%; border-radius:999px; transition: width .25s ease; }
 
-    .secLabel{
-      margin: 16px 4px 8px;
-      display:flex; align-items:baseline; justify-content:space-between; gap:10px;
-      color: rgba(231,255,255,.72);
-      font-weight: 950; letter-spacing:.7px; text-transform: uppercase;
-    }
-    .secLabel small{ color: rgba(231,255,255,.50); font-weight: 850; text-transform:none; letter-spacing:0; }
-
-    .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 12px;
-      color: rgba(231,255,255,.86);
-      line-height: 1.45;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .mono a{ color: rgba(231,255,255,.92); text-decoration:none; border-bottom: 1px dotted rgba(231,255,255,.35); }
-    .mono a:hover{ border-bottom-color: rgba(231,255,255,.70); }
-
-    /* brand palettes */
     .b-blue .dot{ background: var(--blue); }
     .b-blue .barFill{ background: linear-gradient(90deg, rgba(26,167,255,.95), rgba(0,120,255,.85)); }
 
@@ -147,31 +150,29 @@
     th,td{ padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 13px; }
     th{ text-transform: uppercase; letter-spacing: .35px; color: rgba(231,255,255,.55); text-align:left; }
     td{ color: rgba(231,255,255,.92); }
-    .rightTxt{ text-align:right; }
     .hideSm{ display: table-cell; }
     @media (max-width: 720px){ .hideSm{ display:none; } }
 
-    .statusLine{
-      margin: 8px 4px 2px;
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      color: rgba(231,255,255,.55); font-weight: 800; font-size: 12px;
+    .modalBack{
+      position: fixed; inset:0; background: rgba(0,0,0,.55);
+      display:none; align-items:flex-end; justify-content:center;
+      padding: 12px; z-index: 9999;
     }
-    .btn{
+    .modal{
+      width:min(980px, 100%);
+      border-radius: 20px;
       border: 1px solid rgba(231,255,255,.14);
-      border-radius: 999px;
-      background: rgba(255,255,255,.06);
-      color: rgba(231,255,255,.92);
-      padding: 10px 12px;
-      font-weight: 950;
-      cursor:pointer;
+      background: linear-gradient(180deg, rgba(14,28,40,.98), rgba(8,16,26,.98));
+      box-shadow: 0 30px 80px rgba(0,0,0,.55);
+      overflow:hidden;
     }
-    .btn.primary{
-      border:0;
-      background: linear-gradient(135deg, rgba(26,167,255,.95), rgba(0,120,255,.85));
-      color: rgba(3,10,18,.92);
-      box-shadow: 0 16px 28px rgba(0,0,0,.25);
+    .modalHead{
+      padding: 12px 14px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
     }
-    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; padding: 10px 4px 0; }
+    .modalTitle{ font-weight: 950; text-transform: uppercase; letter-spacing:.6px; font-size: 12px; color: rgba(231,255,255,.86); }
+    .modalBody{ padding: 10px 14px 14px; max-height: 72vh; overflow:auto; }
   </style>
 </head>
 
@@ -180,11 +181,11 @@
     <div class="titleRow">
       <div>
         <h1>Stats</h1>
-        <div class="sub">Tracking ADN66 • D1 + Worker</div>
+        <div class="sub">Comparaison de clics • ADN66</div>
       </div>
       <div class="btnRow">
         <button class="btn primary" id="btnRefresh">Actualiser</button>
-        <button class="btn" id="btnCopyLinks">Copier liens</button>
+        <button class="btn" id="btnInfos">Infos (50 derniers)</button>
       </div>
     </div>
 
@@ -200,7 +201,7 @@
             <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Actions</div>
             <div class="meta">Events total</div>
           </div>
-          <span class="chip" id="chipTotal">events.total</span>
+          <span class="chip">events.total</span>
         </div>
         <div class="cardBody">
           <div class="bigNum" id="totalEvents">—</div>
@@ -211,10 +212,10 @@
       <div class="card">
         <div class="cardHead">
           <div>
-            <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Events aujourd’hui</div>
+            <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Aujourd’hui</div>
             <div class="meta">Events du jour</div>
           </div>
-          <span class="chip" id="chipToday">events.today</span>
+          <span class="chip">events.today</span>
         </div>
         <div class="cardBody">
           <div class="bigNum" id="todayEvents">—</div>
@@ -223,93 +224,108 @@
       </div>
     </div>
 
-    <div class="secLabel">Comparatif <small>Nuit vs Catalan</small></div>
-    <div class="card">
-      <div class="cardHead">
-        <div>
-          <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Total Events</div>
-          <div class="meta">Apéro de Nuit 66 / Apéro Catalan</div>
-        </div>
-        <span class="chip">events.byBrand</span>
-      </div>
-      <div class="cardBody">
-        <div class="list" id="cmpList">—</div>
-        <div class="list" style="margin-top:10px" id="cmpBars">—</div>
-      </div>
-    </div>
+    <div class="secLabel">APEROS.NET <small>Apéro de Nuit 66 • Bleu</small></div>
 
-    <div class="secLabel">Apéro de Nuit 66 <small>Bleu</small></div>
     <div class="card b-blue">
       <div class="cardHead">
         <div>
-          <div class="h"><span class="dot"></span>Apéro de Nuit 66</div>
-          <div class="meta">Canaux + Actions + Âge</div>
+          <div class="h"><span class="dot"></span>Boutons (Jeux / Install / Appel)</div>
+          <div class="meta">Comparaison en %</div>
         </div>
-        <span class="chip">events.byEvent</span>
+        <span class="chip">nuit.intent</span>
       </div>
-      <div class="cardBody">
-        <div class="pillRow"><span class="name">Total Nuit</span><span class="n" id="totalNuit">—</span></div>
-        <div class="list" style="margin-top:10px" id="nuitBars">—</div>
-      </div>
+      <div class="cardBody"><div class="list" id="nuitIntent"></div></div>
     </div>
 
-    <div class="secLabel">Apéro Catalan <small>Jaune</small></div>
+    <div style="height:12px"></div>
+
+    <div class="card b-blue">
+      <div class="cardHead">
+        <div>
+          <div class="h"><span class="dot"></span>Âge légal (accept/refuse)</div>
+          <div class="meta">Comparaison en %</div>
+        </div>
+        <span class="chip">nuit.age</span>
+      </div>
+      <div class="cardBody"><div class="list" id="nuitAge"></div></div>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="card b-blue">
+      <div class="cardHead">
+        <div>
+          <div class="h"><span class="dot"></span>Origine (Facebook / Google)</div>
+          <div class="meta">Comparaison en %</div>
+        </div>
+        <span class="chip">nuit.source</span>
+      </div>
+      <div class="cardBody"><div class="list" id="nuitSource"></div></div>
+    </div>
+
+    <div class="secLabel">CATALAN.APEROS.NET <small>Jaune</small></div>
+
     <div class="card b-yellow">
       <div class="cardHead">
         <div>
-          <div class="h"><span class="dot"></span>Apéro Catalan</div>
-          <div class="meta">Actions + Âge</div>
+          <div class="h"><span class="dot"></span>Boutons (Install / Appel)</div>
+          <div class="meta">Comparaison en %</div>
         </div>
-        <span class="chip">events.byEvent</span>
+        <span class="chip">catalan.intent</span>
       </div>
-      <div class="cardBody">
-        <div class="pillRow"><span class="name">Total Catalan</span><span class="n" id="totalCatalan">—</span></div>
-        <div class="list" style="margin-top:10px" id="catalanBars">—</div>
-      </div>
+      <div class="cardBody"><div class="list" id="catIntent"></div></div>
     </div>
 
-    <div class="secLabel">Roue de la Fortune <small>Rouge</small></div>
-    <div class="card b-red">
+    <div style="height:12px"></div>
+
+    <div class="card b-yellow">
       <div class="cardHead">
         <div>
-          <div class="h"><span class="dot"></span>Roue</div>
-          <div class="meta">Suivi : <span style="opacity:.8">wheel.*</span></div>
+          <div class="h"><span class="dot"></span>Âge légal (accept/refuse)</div>
+          <div class="meta">Comparaison en %</div>
         </div>
-        <span class="chip">wheel</span>
+        <span class="chip">catalan.age</span>
       </div>
-      <div class="cardBody">
-        <div class="pillRow"><span class="name">Total roue</span><span class="n" id="totalWheel">—</span></div>
-        <div class="list" style="margin-top:10px" id="wheelBars">—</div>
-      </div>
+      <div class="cardBody"><div class="list" id="catAge"></div></div>
     </div>
 
-    <div class="secLabel">Hibair Drink <small>Violet • canaux</small></div>
+    <div style="height:12px"></div>
+
+    <div class="card b-yellow">
+      <div class="cardHead">
+        <div>
+          <div class="h"><span class="dot"></span>Origine (Facebook / Google)</div>
+          <div class="meta">Comparaison en %</div>
+        </div>
+        <span class="chip">catalan.source</span>
+      </div>
+      <div class="cardBody"><div class="list" id="catSource"></div></div>
+    </div>
+
+    <div class="secLabel">GAMIFICATION <small>Hibair vs Roue</small></div>
+
     <div class="card b-violet">
       <div class="cardHead">
         <div>
-          <div class="h"><span class="dot"></span>Hibair Drink</div>
-          <div class="meta">facebook / sms / qr / application</div>
+          <div class="h"><span class="dot"></span>Hibair Drink vs Roue</div>
+          <div class="meta">Comparaison en %</div>
         </div>
-        <span class="chip">hibair</span>
+        <span class="chip">hibair+wheel</span>
       </div>
-      <div class="cardBody">
-        <div class="pillRow"><span class="name">Total Hibair</span><span class="n" id="totalHibair">—</span></div>
-        <div class="list" style="margin-top:10px" id="hibairBars">—</div>
-      </div>
+      <div class="cardBody"><div class="list" id="gameCompare"></div></div>
     </div>
 
-    <div class="secLabel">Détails <small>Tech & lecture fine</small></div>
+    <div class="secLabel">TECHNIQUE <small>Appareil + Navigateur</small></div>
+
     <div class="card">
       <div class="cardHead">
         <div>
-          <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Liens tracking</div>
-          <div class="meta">Copie/colle</div>
+          <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Appareil</div>
+          <div class="meta">Mobile / Ordinateur…</div>
         </div>
-        <span class="chip">trak</span>
+        <span class="chip">byDevice</span>
       </div>
-      <div class="cardBody">
-        <div class="mono" id="linksBox">—</div>
-      </div>
+      <div class="cardBody"><div class="list" id="devBars"></div></div>
     </div>
 
     <div style="height:12px"></div>
@@ -317,40 +333,27 @@
     <div class="card">
       <div class="cardHead">
         <div>
-          <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Mobile / OS / Navigateur</div>
-          <div class="meta">Android / iOS / Chrome / Safari…</div>
+          <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>Navigateur</div>
+          <div class="meta">Chrome / Safari / Firefox…</div>
         </div>
-        <span class="chip">byDevice/byOS/byBrowser</span>
+        <span class="chip">byBrowser</span>
       </div>
-      <div class="cardBody">
-        <div class="row2">
-          <div>
-            <div class="meta" style="margin-bottom:6px">Appareil</div>
-            <table><thead><tr><th>Appareil</th><th class="rightTxt">N</th></tr></thead><tbody id="tbodyDevice"></tbody></table>
-          </div>
-          <div>
-            <div class="meta" style="margin-bottom:6px">OS</div>
-            <table><thead><tr><th>OS</th><th class="rightTxt">N</th></tr></thead><tbody id="tbodyOS"></tbody></table>
-          </div>
-        </div>
-        <div style="margin-top:10px">
-          <div class="meta" style="margin-bottom:6px">Navigateur</div>
-          <table><thead><tr><th>Navigateur</th><th class="rightTxt">N</th></tr></thead><tbody id="tbodyBrowser"></tbody></table>
-        </div>
-      </div>
+      <div class="cardBody"><div class="list" id="browserBars"></div></div>
     </div>
 
-    <div style="height:12px"></div>
+    <div style="height:18px"></div>
+    <div style="text-align:center; color: rgba(231,255,255,.50); font-weight:800; font-size:12px;">
+      ADN66 • Stats
+    </div>
+  </div>
 
-    <div class="card">
-      <div class="cardHead">
-        <div>
-          <div class="h"><span class="dot" style="background:rgba(231,255,255,.25)"></span>50 derniers</div>
-          <div class="meta">Mix clicks + events</div>
-        </div>
-        <span class="chip">last</span>
+  <div class="modalBack" id="modalBack" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="50 derniers">
+      <div class="modalHead">
+        <div class="modalTitle">50 derniers utilisateurs • Historique</div>
+        <button class="btn" id="btnClose">Fermer</button>
       </div>
-      <div class="cardBody" style="padding-top:6px">
+      <div class="modalBody">
         <table>
           <thead>
             <tr>
@@ -365,11 +368,6 @@
           <tbody id="tbodyLast50"></tbody>
         </table>
       </div>
-    </div>
-
-    <div style="height:18px"></div>
-    <div style="text-align:center; color: rgba(231,255,255,.50); font-weight:800; font-size:12px;">
-      ADN66 • Stats
     </div>
   </div>
 
