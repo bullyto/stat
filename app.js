@@ -224,13 +224,16 @@ function registerSW(){
 function openModal(){
   const back = $("modalBack");
   if(!back) return;
-  back.style.display = "flex";
+  // Force display even if style.css contains conflicting rules
+  back.style.setProperty("display","flex","important");
+  back.style.setProperty("visibility","visible","important");
+  back.style.setProperty("opacity","1","important");
   back.setAttribute("aria-hidden","false");
 }
 function closeModal(){
   const back = $("modalBack");
   if(!back) return;
-  back.style.display = "none";
+  back.style.setProperty("display","none","important");
   back.setAttribute("aria-hidden","true");
 }
 
@@ -275,6 +278,7 @@ async function refresh(){
 document.addEventListener("DOMContentLoaded", () => {
   $("btnRefresh")?.addEventListener("click", refresh);
   $("btnInfos")?.addEventListener("click", openModal);
+  $("btnInfos")?.addEventListener("pointerdown", (e)=>{ e.preventDefault(); openModal(); });
   $("btnClose")?.addEventListener("click", closeModal);
   $("modalBack")?.addEventListener("click", (e)=>{ if(e.target?.id==="modalBack") closeModal(); });
   document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeModal(); });
