@@ -323,3 +323,20 @@ body{
   .campaignCards{grid-template-columns:1fr}
   .hideSm{display:none}
 }
+
+
+/* Last 50 popup: colored reminder by universe */
+.nameLine{display:flex; align-items:center; gap:8px;}
+.tagDot{width:10px; height:10px; border-radius:50%; flex:0 0 auto; box-shadow:0 0 0 2px rgba(255,255,255,.08);}
+.dotNuit{background:var(--blue);}
+.dotCatalan{background:var(--yellow);}
+.dotHibair{background:var(--violet);}
+.dotWheel{background:var(--green);}
+.dotNeutral{background:rgba(255,255,255,.35);}
+.metaSm{margin-top:4px; font-size:12px; opacity:.7; line-height:1.2;}
+/* keep table readable on mobile */
+@media (max-width:520px){
+  .modalBody table th.hideSm,
+  .modalBody table td.hideSm{display:none;}
+  .modalBody table td{vertical-align:top;}
+}

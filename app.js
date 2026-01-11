@@ -11,6 +11,36 @@ function fmt(n){
   if(!Number.isFinite(x)) return "—";
   return new Intl.NumberFormat("fr-FR").format(x);
 }
+
+function parseUA(ua){
+  ua = String(ua||"");
+  const u = ua.toLowerCase();
+
+  // OS
+  let os = "";
+  if(u.includes("android")) os = "Android";
+  else if(u.includes("iphone") || u.includes("ipad") || u.includes("ipod")) os = "iOS";
+  else if(u.includes("windows")) os = "Windows";
+  else if(u.includes("mac os x") || u.includes("macintosh")) os = "macOS";
+  else if(u.includes("linux")) os = "Linux";
+  else os = "";
+
+  // Browser (rough but good enough)
+  let browser = "";
+  if(u.includes("edg/") || u.includes("edge")) browser = "Edge";
+  else if(u.includes("firefox/")) browser = "Firefox";
+  else if(u.includes("safari") && !u.includes("chrome") && !u.includes("chromium")) browser = "Safari";
+  else if(u.includes("chrome") || u.includes("chromium")) browser = "Chrome";
+  else browser = "";
+
+  // Device
+  let device = "";
+  if(u.includes("mobi") || u.includes("iphone") || u.includes("android")) device = "Mobile";
+  else device = "Desktop";
+
+  return { os, browser, device };
+}
+
 function esc(s){
   return String(s ?? "")
     .replaceAll("&","&amp;")
@@ -85,16 +115,41 @@ function barRow(label, n, pct, palette){
   const pctTxt = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
   const w = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
 
-  // Same bar component as your reference folder: .bar > span
   const grad = `linear-gradient(90deg, ${palette.c1}, ${palette.c2})`;
 
+  // shorter bar for readability
+  const trackStyle = [
+    "margin-top:10px",
+    "height:14px",
+    "width:78%",
+    "border-radius:999px",
+    "border:1px solid rgba(255,255,255,.28)",
+    "background:rgba(255,255,255,.12)",
+    "overflow:hidden",
+    "position:relative",
+    "z-index:2",
+    "box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(0,0,0,.35)"
+  ].join(";");
+
+  const fillStyle = [
+    "height:100%",
+    `width:${w}%`,
+    "border-radius:999px",
+    `background:${grad}`,
+    "position:relative",
+    "z-index:3",
+    "box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 0 18px rgba(90,255,235,.18)"
+  ].join(";");
+
   return `
-    <div class="cmpItem">
-      <div class="cmpTop">
-        <div class="cmpLabel">${esc(label)}</div>
-        <div class="cmpVal"><span class="cmpN">${fmt(n)}</span><span class="cmpDot">•</span><span class="cmpP">${pctTxt}</span></div>
+    <div class="barRow">
+      <div class="barTop">
+        <div class="left">${esc(label)}</div>
+        <div class="right"><span>${fmt(n)}</span><span style="opacity:.75">&nbsp;•&nbsp;</span><span>${pctTxt}</span></div>
       </div>
-      <div class="bar"><span style="width:${w}%;background:${grad}"></span></div>
+      <div style="${trackStyle}">
+        <div style="${fillStyle}"></div>
+      </div>
     </div>
   `;
 }
@@ -168,6 +223,59 @@ function normalizeClick(r){
 function normalizeEvent(r){
   return { kind:"event", date: parseDateAny(r.ts ?? r.created_at ?? r.date), name:String(r.event_key ?? r.k ?? r.key ?? ""), src:String(r.src ?? r.source ?? ""), os:String(r.os ?? ""), browser:String(r.browser ?? "") };
 }
+
+function getRowTag(x){
+  const n = String(x?.name||"").toLowerCase();
+  const s = String(x?.src||"").toLowerCase();
+
+  // decide universe by event/campaign name
+  if(n.includes("apero_nuit") || s.includes("apero") || n === "apero"){
+    return { cls:"tagNuit", dot:"dotNuit" };
+  }
+  if(n.includes("apero_catalan") || s.includes("catalan") || n === "catalan"){
+    return { cls:"tagCatalan", dot:"dotCatalan" };
+  }
+  if(n.includes("wheel") || n.includes("roue") || s.includes("sms")){
+    return { cls:"tagWheel", dot:"dotWheel" };
+  }
+  if(n.includes("jeux") || n.includes("hibair")){
+    return { cls:"tagHibair", dot:"dotHibair" };
+  }
+  return { cls:"tagNeutral", dot:"dotNeutral" };
+}
+
+
+function buildOSCountsFromLast(lastClicks, lastEvents){
+  const clicks = (lastClicks||[]).map(normalizeClick);
+  const events = (lastEvents||[]).map(normalizeEvent);
+  const all = clicks.concat(events);
+  const map = new Map();
+  for(const x of all){
+    let os = String(x.os||"");
+    if(!os && x.ua){
+      os = parseUA(x.ua).os;
+    }
+    os = os || "Autre";
+    map.set(os, (map.get(os)||0) + 1);
+  }
+  // convert to array of {name, n}
+  return Array.from(map.entries()).map(([name,n])=>({name, n})).sort((a,b)=>b.n-a.n);
+}
+
+function renderTechOS(list){
+  const el = $("techOS");
+  if(!el) return;
+  const items = (list||[]).map(r=>({label:String(r.name ?? r.label ?? r.os ?? "Autre"), n:Number(r.n ?? r.count ?? 0)})).filter(x=>x.label);
+  const total = items.reduce((s,x)=>s+Number(x.n||0),0);
+  if(!total){
+    el.innerHTML = `<div style="opacity:.6">—</div>`;
+    return;
+  }
+  // neutral palette for tech
+  const pal = {c1:"rgba(220,240,245,.85)", c2:"rgba(160,190,200,.70)"};
+  el.innerHTML = items.slice(0,8).map(x=>barRow(x.label.toLowerCase(), x.n, (x.n/total*100), pal)).join("");
+}
+
 function renderLast50(lastClicks, lastEvents){
   const tb = $("tbodyLast50");
   if(!tb) return;
@@ -178,16 +286,26 @@ function renderLast50(lastClicks, lastEvents){
     tb.innerHTML = `<tr><td colspan="6" style="opacity:.6">—</td></tr>`;
     return;
   }
-  tb.innerHTML = all.map(x=>`
-    <tr>
+  tb.innerHTML = all.map(x=>{
+    const tag = getRowTag(x);
+    const meta = [x.src, x.os, x.browser].filter(Boolean).join(" • ");
+    return `
+    <tr class="rowTag ${tag.cls}">
       <td>${esc(fmtDate(x.date))}</td>
       <td>${esc(x.kind)}</td>
-      <td>${esc(x.name)}</td>
+      <td>
+        <div class="nameLine">
+          <span class="tagDot ${tag.dot}"></span>
+          <span>${esc(x.name)}</span>
+        </div>
+        <div class="metaSm">${esc(meta || "")}</div>
+      </td>
       <td class="hideSm">${esc(x.src || "")}</td>
       <td class="hideSm">${esc(x.os || "")}</td>
       <td class="hideSm">${esc(x.browser || "")}</td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function computeTodayFallback(s){
@@ -201,7 +319,7 @@ function computeTodayFallback(s){
   return count || NaN;
 }
 
-function buildComparisons(s){
+function buildComparisons(s, lastClicks, lastEvents){
   const E = getEventCountMap(s.byEvent);
   const C = getCampaignCountMap(s.byCampaign);
 
@@ -222,14 +340,9 @@ function buildComparisons(s){
 
   const catAgeOk = Number(E["apero_catalan.age.accept"] ?? 0);
   const catAgeNo = Number(E["apero_catalan.age.refuse"] ?? 0);
-  // CATALAN source split (prefer /go tracking if API exposes per-source keys)
-  const catFb =
-    Number(C["catalan_facebook"] ?? C["catalan:facebook"] ?? C["catalan-facebook"] ?? C["catalan?src=facebook"] ?? C["catalan_fb"] ?? 0);
-  const catGmb =
-    Number(C["catalan_direct"] ?? C["catalan:direct"] ?? C["catalan-direct"] ?? C["catalan?src=direct"] ?? C["catalan_gmb"] ?? 0);
 
-  // Fallback: if API only exposes aggregated "catalan", keep 0/0 and UI will show "—"
-
+  // Catalan source split is /go links; without API bySource, we can't split reliably.
+  // We display an informative message in UI (handled below).
 
   // Gamification
   const hibair = Number(C.jeux ?? 0);
@@ -253,10 +366,6 @@ function buildComparisons(s){
       {label:"Install app", n:catInstall},
       {label:"Appel", n:catCall},
     ],
-    catSource: [
-      {label:"Facebook", n:catFb},
-      {label:"Google My Business", n:catGmb},
-    ],
     catAge: [
       {label:"Âge accepté", n:catAgeOk},
       {label:"Âge refusé", n:catAgeNo},
@@ -265,7 +374,8 @@ function buildComparisons(s){
       {label:"Hibair Drink", n:hibair},
       {label:"Roue de la fortune", n:wheel},
     ],
-    techDevice: (s.byDevice||[]).map(r=>({label:String(r.device??"?"), n:Number(r.n??0)})).slice(0,10),
+    techOS: ((s.byOS||s.byOs||s.by_os||[])||[]).map(r=>({label:String(r.os??r.name??r.label??"?"), n:Number(r.n??r.count??0)})).slice(0,10),
+    techOSFallback: buildOSCountsFromLast(lastClicks, lastEvents),
     techBrowser: (s.byBrowser||[]).map(r=>({label:String(r.browser??"?"), n:Number(r.n??0)})).slice(0,10),
   };
 }
@@ -306,7 +416,7 @@ async function refresh(){
     const today = Number.isFinite(s.totals.todayEvents) ? s.totals.todayEvents : computeTodayFallback(s);
     setText("todayEvents", Number.isFinite(today) ? fmt(today) : "—");
 
-    const cmp = buildComparisons(s);
+    const cmp = buildComparisons(s, s.lastClicks, s.lastEvents);
 
     renderCompare("nuitIntent", cmp.nuitIntent);
     renderCompare("nuitAge", cmp.nuitAge);
@@ -314,12 +424,11 @@ async function refresh(){
 
     renderCompare("catIntent", cmp.catIntent);
     renderCompare("catAge", cmp.catAge);
-  renderCompare("catSource", cmp.catSource);
 
     setHTML("catSource", `<div style="opacity:.65">Comparatif Facebook/Google pour Catalan : OK quand tu auras des events dédiés (ex: apero_catalan.facebook.click / apero_catalan.site.click) ou un split /go par source exposé dans l’API.</div>`);
 
     renderCompare("gameCompare", cmp.gameCompare);
-    renderCompare("devBars", cmp.techDevice);
+    renderCompare("devBars", (cmp.techOS && cmp.techOS.length) ? cmp.techOS : (cmp.techOSFallback||[]));
     renderCompare("browserBars", cmp.techBrowser);
 
     renderLast50(s.lastClicks, s.lastEvents);
