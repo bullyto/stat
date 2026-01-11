@@ -251,8 +251,7 @@
     </div>
 
     <div class="actions">
-      <button class="btn" id="btnRefresh">Actualiser</button>
-      <button class="btn ghost" id="btnInstall" hidden>Installer</button>
+      <button class="btn" id="btnRefresh">Actualiser</button>      <button class="btn ghost" id="btnInstall" hidden>Installer</button>
     </div>
 
     <div class="statusRow">
@@ -400,26 +399,6 @@
       </div>
     </div>
 
-    <!-- Hibair -->
-    <div class="sectionTitle">
-      <div class="t">Hibair Drink</div>
-      <div class="k">Violet</div>
-    </div>
-
-    <div class="block t-hibair">
-      <div class="blockHead">
-        <div>
-          <div class="blockTitle"><span class="badgeDot"></span> Hibair</div>
-          <div class="blockSub">facebook / sms / qr / app</div>
-        </div>
-        <span class="chip">hibair</span>
-      </div>
-      <div class="blockBody">
-        <div class="pillKpi"><div class="l">Total</div><div class="r" id="kpiHibairTotal">—</div></div>
-        <div class="miniViz t-hibair" id="vizHibair"></div>
-      </div>
-    </div>
-
     <!-- Détails -->
     <div class="sectionTitle">
       <div class="t">Détails</div>
@@ -433,40 +412,15 @@
         <div class="cardHead">
           <div>
             <div class="cardTitle">Campagnes</div>
-            <div class="sub">apero / catalan / chance / jeux</div>
+            <div class="sub">apero / catalan / jeux</div>
           </div>
           <span class="chip">clicks.byCampaign</span>
         </div>
 
         <div class="campaignCards">
-          <div class="campaignCard">
-            <div class="campTop"><div class="campName">Apéro</div><span class="campPill">apero</span></div>
-            <div class="campValue" id="cApero">—</div>
-            <div class="campExact">/go/apero?src=…</div>
-          </div>
-
-          <div class="campaignCard">
-            <div class="campTop"><div class="campName">Catalan</div><span class="campPill">catalan</span></div>
-            <div class="campValue" id="cCatalan">—</div>
-            <div class="campExact">/go/catalan?src=…</div>
-          </div>
-
-          <div class="campaignCard">
-            <div class="campTop"><div class="campName">Chance</div><span class="campPill">chance</span></div>
-            <div class="campValue" id="cChance">—</div>
-            <div class="campExact">/go/chance?src=…</div>
-          </div>
-
-          <div class="campaignCard">
-            <div class="campTop"><div class="campName">Jeux</div><span class="campPill">jeux</span></div>
-            <div class="campValue" id="cJeux">—</div>
-            <div class="campExact">/go/jeux?src=…</div>
-          </div>
-        </div>
-
-        <div class="tableWrap">
+<div class="tableWrap">
           <table class="table small">
-            <thead><tr><th>Campagne</th><th class="right">Clics</th><th class="hideSm">Tracking</th><th class="hideSm">Destination</th></tr></thead>
+            <thead><tr><th>Campagne</th><th class="right">Clics</th></tr></thead>
             <tbody id="tbodyCampaign"></tbody>
           </table>
         </div>
@@ -562,23 +516,23 @@
         <div id="vizHourly" class="miniViz"></div>
       </div>
 
-      <!-- Last -->
+      <!-- Last events -->
       <div class="card">
         <div class="cardHead">
           <div>
-            <div class="cardTitle">Derniers clics</div>
-            <div class="sub">50 derniers</div>
+            <div class="cardTitle">Derniers événements</div>
+            <div class="sub">50 derniers (OS / navigateur)</div>
           </div>
-          <span class="chip">last</span>
+          <span class="chip">events.last</span>
         </div>
         <div class="tableWrap">
           <table class="table small">
             <thead>
               <tr>
-                <th>Date</th><th>Campagne</th><th>Source</th><th class="hideSm">Appareil</th><th class="hideSm">OS</th><th class="hideSm">Nav</th>
+                <th>Date</th><th>Événement</th><th>Source</th><th>Appareil</th><th>OS</th><th>Nav</th>
               </tr>
             </thead>
-            <tbody id="tbodyLast"></tbody>
+            <tbody id="tbodyLastEvents"></tbody>
           </table>
         </div>
       </div>
@@ -770,11 +724,6 @@
         const wheel = pick(ev, "Roue de la fortune — ");
         if($("kpiWheelTotal")) $("kpiWheelTotal").textContent = fmt(sum(wheel));
         renderMiniViz("vizWheel", wheel, "t-wheel");
-
-        // Hibair
-        const hibair = filterStarts(ev, "Hibair Drink — ");
-        if($("kpiHibairTotal")) $("kpiHibairTotal").textContent = fmt(sum(hibair));
-        renderMiniViz("vizHibair", hibair, "t-hibair");
       }
 
       function boot(){

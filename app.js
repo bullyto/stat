@@ -149,6 +149,20 @@ function renderRows(tbodyId, rows, kGetter, vGetter) {
 }
 
 // NEW: label “humain” pour tes event_key
+const ALLOWED_EVENT_KEYS = new Set([
+  "apero_nuit.app.click",
+  "apero_nuit.call",
+  "apero_nuit.qr.click",
+  "apero_nuit.facebook.click",
+  "apero_nuit.site.click",
+  "wheel.sms.click",
+  "apero_catalan.call",
+  "apero_nuit.age.accept",
+  "apero_nuit.age.refuse",
+  "apero_catalan.age.accept",
+  "apero_catalan.age.refuse",
+]);
+
 function eventLabel(key) {
   const k = String(key || "").trim();
 
@@ -197,71 +211,81 @@ function fillKPIs({ total, today, byCampaign, events }) {
 }
 
 function fillCampaigns(byCampaign) {
-  const dest = defaultDestinations();
   const map = {};
   for (const r of (byCampaign || [])) {
     const k = String(r.campaign ?? "").toLowerCase();
     map[k] = Number(r.n ?? 0);
   }
+
+  // ✅ On garde uniquement ce qui correspond à ta liste officielle (trak.txt)
+  // apero / catalan / jeux
   setText("cApero", formatInt(map.apero ?? 0));
   setText("cCatalan", formatInt(map.catalan ?? 0));
-  setText("cChance", formatInt(map.chance ?? 0));
   setText("cJeux", formatInt(map.jeux ?? map.game ?? 0));
 
   const tbody = $("tbodyCampaign");
   if (!tbody) return;
 
-  const keys = ["apero","catalan","chance","jeux"];
-  const rows = keys
-    .map(k => ({ key:k, clicks:Number(map[k] ?? 0), to:dest[k] || "#" }))
+  const rows = ["apero","catalan","jeux"]
+    .map(k => ({ key:k, clicks:Number(map[k] ?? 0) }))
     .sort((a,b)=>b.clicks-a.clicks);
 
-  tbody.innerHTML = rows.map(r => `
+  tbody.innerHTML = rows.length ? rows.map(r => `
     <tr>
       <td>${escapeHtml(campaignLabel(r.key))}</td>
       <td class="right">${formatInt(r.clicks)}</td>
-      <td class="hideSm"><a href="${escapeHtml(buildGoLink(r.key,"direct"))}" target="_blank" rel="noopener">Lien tracking</a></td>
-      <td class="hideSm"><a href="${escapeHtml(r.to)}" target="_blank" rel="noopener">Destination</a></td>
     </tr>
-  `).join("");
+  `).join("") : `<tr><td colspan="2" style="color:rgba(210,255,250,.65)">—</td></tr>`;
 }
 
-function fillLastClicks(last) {
-  const tbody = $("tbodyLast");
+
+// NEW: remplir les tableaux events.*
+
+function formatDateTime(tsOrIso) {
+  // events.ts = ms epoch; clicks.created_at = ISO
+  const n = Number(tsOrIso);
+  if (Number.isFinite(n) && n > 0) {
+    try { return new Date(n).toLocaleString("fr-FR"); } catch {}
+  }
+  const s = String(tsOrIso || "").trim();
+  return s || "—";
+}
+
+function fillLastEvents(lastEvents) {
+  const tbody = $("tbodyLastEvents");
   if (!tbody) return;
-  if (!Array.isArray(last) || !last.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:rgba(210,255,250,.65)">—</td></tr>`;
+
+  if (!Array.isArray(lastEvents) || !lastEvents.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:rgba(210,255,250,.65)">—</td></tr>`;
     return;
   }
-  tbody.innerHTML = last.slice(0,50).map(r => {
-    const date = safeLabel(r.created_at ?? r.date ?? "");
-    const camp = safeLabel(r.campaign ?? "");
-    const src = safeLabel(r.source ?? "");
-    const country = safeLabel(r.country ?? "");
-    const device = safeLabel(r.device ?? "");
+
+  tbody.innerHTML = lastEvents.slice(0,50).map(r => {
+    const date = formatDateTime(r.ts ?? r.created_at ?? "");
+    const evk = safeLabel(r.event_key ?? r.k ?? "");
+    const src = safeLabel(r.src ?? r.source ?? "direct");
     const os = safeLabel(r.os ?? "");
     const browser = safeLabel(r.browser ?? "");
+    const device = safeLabel(r.device ?? "");
     return `
       <tr>
         <td>${escapeHtml(date)}</td>
-        <td>${escapeHtml(campaignLabel(String(camp).toLowerCase()))}</td>
+        <td>${escapeHtml(eventLabel(evk))}</td>
         <td>${escapeHtml(src)}</td>
-        <td>${escapeHtml(country)}</td>
-        <td class="hideSm">${escapeHtml(device)}</td>
-        <td class="hideSm">${escapeHtml(os)}</td>
-        <td class="hideSm">${escapeHtml(browser)}</td>
+        <td>${escapeHtml(device)}</td>
+        <td>${escapeHtml(os)}</td>
+        <td>${escapeHtml(browser)}</td>
       </tr>
     `;
   }).join("");
 }
 
-// NEW: remplir les tableaux events.*
 function fillEventTables(events) {
   if (!events) return;
 
   // byEvent: {k,n}
   if (elExists("tbodyEvent")) {
-    const rows = events.byEvent || [];
+    const rows = (events.byEvent || []).filter(r => ALLOWED_EVENT_KEYS.has(String(r.k ?? r.event_key ?? r.key || '').trim()));
     const tbody = $("tbodyEvent");
     tbody.innerHTML = rows.length
       ? rows
@@ -275,7 +299,7 @@ function fillEventTables(events) {
   }
 
   // byBrand: {k,n}
-  renderRows("tbodyBrand", events.byBrand, r => r.k, r => r.n);
+  renderRows("tbodyBrand", (events.byBrand||[]).filter(r => ["apero_nuit","apero_catalan","wheel"].includes(String(r.k||"").trim())), r => r.k, r => r.n);
 
   // byChannel: {k,n} (inclut "(none)")
   renderRows("tbodyChannel", events.byChannel, r => r.k, r => r.n);
@@ -305,211 +329,6 @@ function setupPWAInstall() {
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./service-worker.js").catch(()=>{});
-  }
-}
-
-
-/* =========================
-   Smart dashboard (comme l'ancien)
-   - Ne garde que les events/URLs de ta liste "trak.txt"
-   - Affiche comparatif + blocs par marque (couleurs) + Age Gate
-   ========================= */
-
-const ALLOWED_EVENTS = new Set([
-  // Aperos.net
-  "apero_nuit.app.click",
-  "apero_nuit.call",
-  "apero_nuit.facebook.click",
-  "apero_nuit.site.click",
-  "apero_nuit.qr.click",   // (utilisé aussi pour Age Gate mineur selon ta liste)
-  // Catalan
-  "apero_catalan.call",
-  // Hibair (jeux)
-  "hibair.facebook.click",
-  "hibair.qr.click",
-  // Roue
-  "wheel.sms.click",
-  // Age Gate
-  "apero_nuit.age.accept",
-  "apero_nuit.age.refuse",
-  "apero_catalan.age.accept",
-  "apero_catalan.age.refuse",
-]);
-
-function byEventMap(events){
-  const m = new Map();
-  for (const r of (events?.byEvent || [])){
-    const k = String(r.k ?? r.event_key ?? r.key ?? "").trim();
-    if (!k) continue;
-    m.set(k, Number(r.n ?? 0));
-  }
-  return m;
-}
-
-/** Map des clics "go/*" par campagne + source (si /api/source existe) */
-function bySourceMap(bySource){
-  const m = new Map(); // key = `${campaign}|${source}`
-  for (const r of (bySource || [])){
-    // formats possibles:
-    // {campaign:"apero", source:"sms", n:12}
-    // {k:"apero|sms", n:12}
-    const campaign = String(r.campaign ?? "").toLowerCase().trim();
-    const source = String(r.source ?? r.src ?? "").toLowerCase().trim();
-    const n = Number(r.n ?? 0);
-
-    if (campaign && source){
-      m.set(`${campaign}|${source}`, n);
-      continue;
-    }
-    const k = String(r.k ?? r.key ?? "").trim();
-    if (k && k.includes("|")){
-      const [c,s] = k.split("|").map(x=>x.trim().toLowerCase());
-      if (c && s) m.set(`${c}|${s}`, n);
-    }
-  }
-  return m;
-}
-
-function getSrcCount(srcMap, campaign, source){
-  return Number(srcMap.get(`${String(campaign).toLowerCase()}|${String(source).toLowerCase()}`) ?? 0);
-}
-
-function miniRowHTML(label, value, total, cls){
-  const v = Number(value ?? 0);
-  const t = Number(total ?? 0);
-  const pct = (t > 0) ? Math.round((v / t) * 100) : 0;
-  return `
-    <div class="miniRow ${cls}">
-      <div class="miniTop">
-        <div class="lbl">${escapeHtml(label)}</div>
-        <div class="val">${formatInt(v)} <span class="pct">• ${pct}%</span></div>
-      </div>
-      <div class="miniTrack"><div class="miniFill" style="width:${Math.min(100, Math.max(0, pct))}%"></div></div>
-    </div>
-  `;
-}
-
-function renderMini(containerId, items, cls){
-  const el = $(containerId);
-  if (!el) return;
-  const rows = (items || [])
-    .filter(x => Number(x.v ?? 0) > 0)
-    .sort((a,b)=>Number(b.v)-Number(a.v));
-  const total = rows.reduce((s,x)=>s+Number(x.v||0),0);
-  el.innerHTML = rows.length
-    ? rows.map(x => miniRowHTML(x.l, x.v, total, cls)).join("")
-    : `<div style="color:rgba(210,255,250,.65); font-weight:700">—</div>`;
-}
-
-function smartFill(base){
-  const ev = base.events || {};
-  const evMap = byEventMap(ev);
-  const srcMap = bySourceMap(base.bySource || []);
-
-  // ===== Comparatif (events.byBrand) =====
-  const nuitTotal =
-    Number(evMap.get("apero_nuit.app.click")||0) +
-    Number(evMap.get("apero_nuit.facebook.click")||0) +
-    Number(evMap.get("apero_nuit.site.click")||0) +
-    Number(evMap.get("apero_nuit.qr.click")||0) +
-    Number(evMap.get("apero_nuit.call")||0);
-
-  const catalanTotal =
-    Number(evMap.get("apero_catalan.call")||0) +
-    // + age gate via go/catalan (si dispo)
-    getSrcCount(srcMap,"catalan","sms") +
-    getSrcCount(srcMap,"catalan","qr") +
-    getSrcCount(srcMap,"catalan","facebook") +
-    getSrcCount(srcMap,"catalan","direct");
-
-  if (elExists("kpiBrandNuit")) setText("kpiBrandNuit", formatInt(nuitTotal));
-  if (elExists("kpiBrandCatalan")) setText("kpiBrandCatalan", formatInt(catalanTotal));
-
-  // mini comparatif (1 barre chacun)
-  renderMini("vizBrandNuit", [{l:"Apéro de Nuit 66", v:nuitTotal}], "t-nuit");
-  renderMini("vizBrandCatalan", [{l:"Apéro Catalan", v:catalanTotal}], "t-catalan");
-
-  // ===== Bloc Nuit =====
-  if (elExists("kpiNuitTotal")) setText("kpiNuitTotal", formatInt(nuitTotal));
-
-  // Canaux Nuit (liste uniquement)
-  const nuitChannels = [
-    { l:"Site", v: evMap.get("apero_nuit.site.click")||0 },
-    { l:"Facebook", v: evMap.get("apero_nuit.facebook.click")||0 },
-    { l:"QR", v: evMap.get("apero_nuit.qr.click")||0 },
-    { l:"Application", v: evMap.get("apero_nuit.app.click")||0 },
-  ];
-  renderMini("vizNuitChannels", nuitChannels, "t-nuit");
-
-  // Actions Nuit (liste uniquement)
-  const nuitActions = [
-    { l:"Bouton appeler", v: evMap.get("apero_nuit.call")||0 },
-    { l:"Installer l’app", v: evMap.get("apero_nuit.app.click")||0 },
-    { l:"Bouton jeux", v: getSrcCount(srcMap,"jeux","direct") || 0 },
-  ];
-  const nuitActionsTotal = nuitActions.reduce((s,x)=>s+Number(x.v||0),0);
-  if (elExists("kpiNuitActions")) setText("kpiNuitActions", formatInt(nuitActionsTotal));
-  renderMini("vizNuitActions", nuitActions, "t-nuit");
-
-  // Âge Nuit (nouvelle logique)
-  const nuitAgeYes = getSrcCount(srcMap,"apero","sms") + Number(evMap.get("apero_nuit.age.accept")||0);
-  const nuitAgeNo  = Number(evMap.get("apero_nuit.age.refuse")||0) + Number(evMap.get("apero_nuit.qr.click")||0);
-  if (elExists("kpiNuitAge")) setText("kpiNuitAge", formatInt(nuitAgeYes + nuitAgeNo));
-  renderMini("vizNuitAge", [
-    { l:"Accepter", v: nuitAgeYes },
-    { l:"Refuser", v: nuitAgeNo },
-  ], "t-nuit");
-
-  // ===== Bloc Catalan =====
-  const catalanActions = [
-    { l:"Bouton appeler", v: evMap.get("apero_catalan.call")||0 },
-  ];
-  const catalanActionsTotal = catalanActions.reduce((s,x)=>s+Number(x.v||0),0);
-  if (elExists("kpiCatalanTotal")) setText("kpiCatalanTotal", formatInt(catalanTotal));
-  if (elExists("kpiCatalanActions")) setText("kpiCatalanActions", formatInt(catalanActionsTotal));
-  renderMini("vizCatalanActions", catalanActions, "t-catalan");
-
-  // Âge Catalan (go/catalan?src=sms / go/catalan?src=qr)
-  const catAgeYes = getSrcCount(srcMap,"catalan","sms") + Number(evMap.get("apero_catalan.age.accept")||0);
-  const catAgeNo  = getSrcCount(srcMap,"catalan","qr") + Number(evMap.get("apero_catalan.age.refuse")||0);
-  if (elExists("kpiCatalanAge")) setText("kpiCatalanAge", formatInt(catAgeYes + catAgeNo));
-  renderMini("vizCatalanAge", [
-    { l:"Accepter", v: catAgeYes },
-    { l:"Refuser", v: catAgeNo },
-  ], "t-catalan");
-
-  // ===== Hibair =====
-  const hibairTotal =
-    Number(evMap.get("hibair.qr.click")||0) +
-    Number(evMap.get("hibair.facebook.click")||0);
-
-  if (elExists("kpiHibairTotal")) setText("kpiHibairTotal", formatInt(hibairTotal));
-  renderMini("vizHibair", [
-    { l:"QR", v: evMap.get("hibair.qr.click")||0 },
-    { l:"Facebook", v: evMap.get("hibair.facebook.click")||0 },
-  ], "t-hibair");
-
-  // ===== Roue =====
-  const wheelTotal = Number(evMap.get("wheel.sms.click")||0);
-  if (elExists("kpiWheelTotal")) setText("kpiWheelTotal", formatInt(wheelTotal));
-  renderMini("vizWheel", [
-    { l:"SMS", v: wheelTotal },
-  ], "t-wheel");
-
-  // ===== Nettoyage visuel : ne pas afficher "events.byEvent" complet
-  // Si un tableau "tbodyEvent" existe, on le filtre sur la liste (au lieu de tout).
-  if (elExists("tbodyEvent")) {
-    const tbody = $("tbodyEvent");
-    const rows = (ev.byEvent || []).filter(r => ALLOWED_EVENTS.has(String(r.k ?? r.event_key ?? r.key ?? "").trim()));
-    tbody.innerHTML = rows.length
-      ? rows
-          .map(r => {
-            const key = safeLabel(r.k ?? r.event_key ?? r.key);
-            const n = Number(r.n ?? 0);
-            return `<tr><td>${escapeHtml(eventLabel(key))}</td><td class="right">${formatInt(n)}</td></tr>`;
-          })
-          .join("")
-      : `<tr><td colspan="2" style="color:rgba(210,255,250,.65)">—</td></tr>`;
   }
 }
 
@@ -548,13 +367,10 @@ async function refresh() {
     // Existing optional blocks
     renderRows("tbodySource", base.bySource, r => r.source, r => r.n);
     renderRows("tbodyHourly", base.hourly, r => r.hour ?? r.heure, r => r.n);
-    fillLastClicks(base.last);
+    fillLastEvents(base.events?.last || []);
 
     // NEW: events blocks
     fillEventTables(base.events);
-
-    // Dashboard intelligent (tri + couleurs + Age Gate)
-    smartFill(base);
 
     setStatus("OK • stats à jour ✅", "good");
   } catch (err) {
@@ -602,7 +418,8 @@ async function hardReload() {
 
 document.addEventListener("DOMContentLoaded", () => {
   setText("apiHost", "stats.aperos.net");
-  if (elExists("btnRefresh")) $("btnRefresh").addEventListener("click", refresh);  if (elExists("btnHardReload")) $("btnHardReload").addEventListener("click", hardReload);
+  if (elExists("btnRefresh")) $("btnRefresh").addEventListener("click", refresh);
+  if (elExists("btnHardReload")) $("btnHardReload").addEventListener("click", hardReload);
 
   setupPWAInstall();
   setupAuto();
