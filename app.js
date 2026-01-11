@@ -84,39 +84,17 @@ function paletteForContainer(containerId){
 function barRow(label, n, pct, palette){
   const pctTxt = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
   const w = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
+
+  // Same bar component as your reference folder: .bar > span
   const grad = `linear-gradient(90deg, ${palette.c1}, ${palette.c2})`;
 
-  const trackStyle = [
-    "margin-top:10px",
-    "height:16px",
-    "border-radius:999px",
-    "border:1px solid rgba(255,255,255,.28)",
-    "background:rgba(255,255,255,.12)",
-    "overflow:hidden",
-    "position:relative",
-    "z-index:2",
-    "box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(0,0,0,.35)"
-  ].join(";");
-
-  const fillStyle = [
-    "height:100%",
-    `width:${w}%`,
-    "border-radius:999px",
-    `background:${grad}`,
-    "position:relative",
-    "z-index:3",
-    "box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 0 22px rgba(90,255,235,.22)"
-  ].join(";");
-
   return `
-    <div class="barRow">
-      <div class="barTop">
-        <div class="left">${esc(label)}</div>
-        <div class="right"><span>${fmt(n)}</span><span style="opacity:.8">•</span><span>${pctTxt}</span></div>
+    <div class="cmpItem">
+      <div class="cmpTop">
+        <div class="cmpLabel">${esc(label)}</div>
+        <div class="cmpVal"><span class="cmpN">${fmt(n)}</span><span class="cmpDot">•</span><span class="cmpP">${pctTxt}</span></div>
       </div>
-      <div style="${trackStyle}">
-        <div style="${fillStyle}"></div>
-      </div>
+      <div class="bar"><span style="width:${w}%;background:${grad}"></span></div>
     </div>
   `;
 }
@@ -244,9 +222,14 @@ function buildComparisons(s){
 
   const catAgeOk = Number(E["apero_catalan.age.accept"] ?? 0);
   const catAgeNo = Number(E["apero_catalan.age.refuse"] ?? 0);
+  // CATALAN source split (prefer /go tracking if API exposes per-source keys)
+  const catFb =
+    Number(C["catalan_facebook"] ?? C["catalan:facebook"] ?? C["catalan-facebook"] ?? C["catalan?src=facebook"] ?? C["catalan_fb"] ?? 0);
+  const catGmb =
+    Number(C["catalan_direct"] ?? C["catalan:direct"] ?? C["catalan-direct"] ?? C["catalan?src=direct"] ?? C["catalan_gmb"] ?? 0);
 
-  // Catalan source split is /go links; without API bySource, we can't split reliably.
-  // We display an informative message in UI (handled below).
+  // Fallback: if API only exposes aggregated "catalan", keep 0/0 and UI will show "—"
+
 
   // Gamification
   const hibair = Number(C.jeux ?? 0);
@@ -269,6 +252,10 @@ function buildComparisons(s){
     catIntent: [
       {label:"Install app", n:catInstall},
       {label:"Appel", n:catCall},
+    ],
+    catSource: [
+      {label:"Facebook", n:catFb},
+      {label:"Google My Business", n:catGmb},
     ],
     catAge: [
       {label:"Âge accepté", n:catAgeOk},
@@ -327,6 +314,7 @@ async function refresh(){
 
     renderCompare("catIntent", cmp.catIntent);
     renderCompare("catAge", cmp.catAge);
+  renderCompare("catSource", cmp.catSource);
 
     setHTML("catSource", `<div style="opacity:.65">Comparatif Facebook/Google pour Catalan : OK quand tu auras des events dédiés (ex: apero_catalan.facebook.click / apero_catalan.site.click) ou un split /go par source exposé dans l’API.</div>`);
 
