@@ -1,42 +1,117 @@
 /* Stats ADN66 — app.js (Front PWA)
-   Objectif (version 2026-01-11):
-   - Affichage "Liens de tracking" regroupé (apero.net / catalan.aperos.net / jeux / roue)
-   - Compteurs Age Gate via events: *.age.accept / *.age.refuse
-   - Barres colorées :
-        Catalan = jaune
-        Apéro de nuit = bleu
-        Hibair Drink = violet
-        Roue de la fortune = rouge
-   - Derniers 50 (fusion clicks + events) avec OS/Navigateur
+   Base visuelle fournie par ADN66 (index.html/style.css)
+   Objectif: UI minimal:
+   - Bloc "Liens tracking" (format exact demandé)
+   - Barres (4 univers) avec couleurs via classes
+   - OS / Navigateur / Appareil
+   - 50 derniers (mix clicks + events)
 */
 
 const STATS_ORIGIN = "https://stats.aperos.net";
 const API_STATS = `${STATS_ORIGIN}/api/stats`;
 const API_HEALTH = `${STATS_ORIGIN}/api/health`;
 
-const COLORS = {
-  apero: "#3b82f6",      // bleu
-  catalan: "#f6c343",    // jaune
-  jeux: "#a855f7",       // violet (hibair)
-  hibair: "#a855f7",     // violet
-  chance: "#ef4444",     // rouge (roue)
-  wheel: "#ef4444",      // rouge
-};
+const $ = (id) => document.getElementById(id);
 
-function $(id){ return document.getElementById(id); }
-function setText(id, v){ const el=$(id); if(el) el.textContent = String(v ?? ""); }
-function escHtml(s){
-  return String(s ?? "")
-    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
-}
-function formatInt(n){
-  const x = Number(n ?? 0);
-  return Number.isFinite(x) ? x.toLocaleString("fr-FR") : "0";
+function setText(id, text) { const el = $(id); if (el) el.textContent = text; }
+function setHTML(id, html) { const el = $(id); if (el) el.innerHTML = html; }
+
+function setStatus(msg, level="warn") {
+  const el = $("status");
+  if (!el) return;
+  el.textContent = msg || "";
+  el.classList.remove("good","bad","warn");
+  el.classList.add(level);
 }
 
-function buildTrackingText(){
-  return `APERO.NET :
+function formatInt(n) {
+  const num = Number(n);
+  if (!Number.isFinite(num)) return "—";
+  return new Intl.NumberFormat("fr-FR").format(num);
+}
+function safeLabel(v) {
+  if (v === null || v === undefined) return "?";
+  const s = String(v).trim();
+  return s.length ? s : "?";
+}
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+async function fetchJson(url) {
+  const res = await fetch(url, { cache: "no-store" });
+  const text = await res.text();
+  if (!res.ok) {
+    const snippet = text.slice(0, 220).replace(/\s+/g," ").trim();
+    throw new Error(`HTTP ${res.status} — ${snippet || "réponse vide"}`);
+  }
+  const trimmed = text.trim();
+  if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) {
+    const snippet = trimmed.slice(0, 220).replace(/\s+/g," ").trim();
+    throw new Error(`Réponse non-JSON. Début: ${snippet}`);
+  }
+  return JSON.parse(text);
+}
+
+/** Normalize /api/stats output */
+function normalizeStats(data) {
+  const byCampaign = Array.isArray(data.byCampaign) ? data.byCampaign : [];
+  const byDevice = Array.isArray(data.byDevice) ? data.byDevice : [];
+  const byOS = Array.isArray(data.byOS) ? data.byOS : [];
+  const byBrowser = Array.isArray(data.byBrowser) ? data.byBrowser : [];
+  const lastClicks = Array.isArray(data.last) ? data.last : [];
+
+  const ev = (data && typeof data.events === "object" && data.events) ? data.events : null;
+  const events = {
+    byEvent: Array.isArray(ev?.byEvent) ? ev.byEvent : [],
+    last: Array.isArray(ev?.last) ? ev.last : [],
+  };
+
+  return { byCampaign, byDevice, byOS, byBrowser, lastClicks, events };
+}
+
+/** Render simple 2-col tbody */
+function renderRows(tbodyId, rows, kGetter, vGetter) {
+  const tbody = $(tbodyId);
+  if (!tbody) return;
+
+  const safeRows = (rows || [])
+    .map(r => ({ k: safeLabel(kGetter(r)), v: Number(vGetter(r) ?? 0) }))
+    .sort((a,b)=>b.v-a.v);
+
+  tbody.innerHTML = safeRows.length
+    ? safeRows.map(r => `<tr><td>${escapeHtml(r.k)}</td><td class="right">${formatInt(r.v)}</td></tr>`).join("")
+    : `<tr><td colspan="2" style="color:rgba(234,242,255,.55)">—</td></tr>`;
+}
+
+function campaignMap(byCampaign) {
+  const m = {};
+  for (const r of (byCampaign || [])) {
+    const k = String(r.campaign ?? "").toLowerCase();
+    m[k] = Number(r.n ?? 0);
+  }
+  return m;
+}
+
+function eventMap(byEvent) {
+  const m = {};
+  for (const r of (byEvent || [])) {
+    const k = String(r.k ?? r.event_key ?? r.key ?? "").trim();
+    if (!k) continue;
+    m[k] = Number(r.n ?? 0);
+  }
+  return m;
+}
+
+function linksText() {
+  // EXACT format demandé par ADN66
+  return [
+`APERO.NET :
 BOUTON JEUX : https://stats.aperos.net/go/jeux?src=direct
 BOUTON INSTAL APP : https://stats.aperos.net/e/apero_nuit.app.click?to=https%3A%2F%2Faperos.net&src=app
 BOUTON APPEL : https://stats.aperos.net/e/apero_nuit.call?to=tel%3A0652336461&src=app
@@ -75,309 +150,233 @@ le jeux hibair drink via QR code :
 https://stats.aperos.net/go/jeux?src=qr
 
 le jeux hibair drink via facebook :
-https://stats.aperos.net/go/jeux?src=facebook
-`;
+https://stats.aperos.net/go/jeux?src=facebook`
+  ].join("\n");
 }
 
-function copyLinks(){
-  const t = buildTrackingText();
-  navigator.clipboard?.writeText(t).then(()=>{
-    toast("Liens copiés ✅");
-  }).catch(()=>{
-    toast("Copie impossible (navigateur) ❌");
-  });
-}
-
-function toast(msg){
-  // mini toast simple sans dépendances
-  let el = document.querySelector(".toast");
-  if(!el){
-    el = document.createElement("div");
-    el.className = "toast";
-    el.style.position = "fixed";
-    el.style.left = "50%";
-    el.style.bottom = "18px";
-    el.style.transform = "translateX(-50%)";
-    el.style.padding = "10px 14px";
-    el.style.borderRadius = "999px";
-    el.style.border = "1px solid rgba(255,255,255,.14)";
-    el.style.background = "rgba(0,0,0,.55)";
-    el.style.backdropFilter = "blur(10px)";
-    el.style.zIndex = "9999";
-    el.style.fontWeight = "700";
-    document.body.appendChild(el);
+async function copyLinks() {
+  const txt = linksText();
+  try {
+    await navigator.clipboard.writeText(txt);
+    setStatus("Liens copiés ✅", "good");
+  } catch {
+    setStatus("Copie bloquée (navigateur) — essaye Chrome", "warn");
   }
-  el.textContent = msg;
-  el.style.opacity = "1";
-  clearTimeout(el._t);
-  el._t = setTimeout(()=>{ el.style.opacity = "0"; }, 1800);
 }
 
-async function fetchJson(url){
-  const r = await fetch(url, { cache: "no-store" });
-  if(!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
+function renderLinksBox() {
+  // monospace block with clickable URLs
+  const raw = linksText();
+  // transform URLs into anchors, keep line breaks
+  const urlRe = /(https?:\/\/[^\s]+)/g;
+  const html = escapeHtml(raw).replace(urlRe, (m)=>`<a href="${m}" target="_blank" rel="noopener">${m}</a>`).replaceAll("\n","<br>");
+  setHTML("linksBox", html);
 }
 
-function toMsFromSqliteDatetime(dt){
-  // "YYYY-MM-DD HH:MM:SS" (localtime). On parse comme local.
-  if(!dt) return 0;
-  const m = String(dt).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
-  if(!m) return 0;
-  const [_, Y, Mo, D, h, mi, s] = m;
-  return new Date(Number(Y), Number(Mo)-1, Number(D), Number(h), Number(mi), Number(s)).getTime();
+function parseDateAny(v) {
+  // supports created_at / ts / ISO strings
+  const s = String(v || "").trim();
+  if (!s) return null;
+  // If it's already ISO
+  const d1 = new Date(s);
+  if (!Number.isNaN(d1.getTime())) return d1;
+  // If it's unix seconds/ms
+  const n = Number(s);
+  if (Number.isFinite(n)) {
+    const ms = (n > 1e12) ? n : n*1000;
+    const d2 = new Date(ms);
+    if (!Number.isNaN(d2.getTime())) return d2;
+  }
+  return null;
 }
 
-function renderBars(containerId, items){
-  const wrap = $(containerId);
-  if(!wrap) return;
-  const safe = (items || []).filter(x => Number(x.value) > 0);
-  if(!safe.length){
-    wrap.innerHTML = `<div class="muted small">Aucune donnée.</div>`;
+function fmtDateShort(d) {
+  try {
+    return new Intl.DateTimeFormat("fr-FR", { dateStyle:"short", timeStyle:"medium" }).format(d);
+  } catch {
+    return d.toISOString();
+  }
+}
+
+function normalizeClickRow(r) {
+  return {
+    kind: "click",
+    date: parseDateAny(r.created_at ?? r.ts ?? r.date) || null,
+    name: safeLabel(r.campaign ?? ""),
+    src: safeLabel(r.source ?? r.src ?? ""),
+    os: safeLabel(r.os ?? ""),
+    browser: safeLabel(r.browser ?? ""),
+  };
+}
+
+function normalizeEventRow(r) {
+  return {
+    kind: "event",
+    date: parseDateAny(r.ts ?? r.created_at ?? r.date) || null,
+    name: safeLabel(r.event_key ?? r.k ?? r.key ?? ""),
+    src: safeLabel(r.src ?? r.source ?? ""),
+    os: safeLabel(r.os ?? ""),
+    browser: safeLabel(r.browser ?? ""),
+  };
+}
+
+function renderLast50(lastClicks, lastEvents) {
+  const tbody = $("tbodyLast50");
+  if (!tbody) return;
+
+  const clicks = (lastClicks || []).map(normalizeClickRow);
+  const events = (lastEvents || []).map(normalizeEventRow);
+
+  const all = clicks.concat(events)
+    .filter(x => x.date)
+    .sort((a,b)=>b.date.getTime()-a.date.getTime())
+    .slice(0,50);
+
+  if (!all.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:rgba(234,242,255,.55)">—</td></tr>`;
     return;
   }
-  const max = Math.max(...safe.map(x => Number(x.value) || 0), 1);
 
-  wrap.innerHTML = safe.map(it=>{
-    const pct = Math.max(0, Math.min(100, (Number(it.value) / max) * 100));
-    const color = it.color || "rgba(255,255,255,.7)";
-    return `
-      <div class="barRow">
-        <div class="barLabel">${escHtml(it.label)}</div>
-        <div class="barTrack"><div class="barFill" style="width:${pct}%;background:${color}"></div></div>
-        <div class="barVal">${formatInt(it.value)}</div>
-      </div>
-    `;
-  }).join("");
-}
-
-function pickTopText(mapLike, topN=4){
-  const rows = Object.entries(mapLike || {})
-    .map(([k,v]) => ({ k, v:Number(v||0) }))
-    .filter(r => r.v > 0)
-    .sort((a,b)=>b.v-a.v)
-    .slice(0, topN);
-  if(!rows.length) return "—";
-  return rows.map(r => `${r.k} (${formatInt(r.v)})`).join(" • ");
-}
-
-function normalizeStats(raw){
-  const clicks = {
-    byCampaign: Array.isArray(raw?.byCampaign) ? raw.byCampaign : [],
-    last: Array.isArray(raw?.last) ? raw.last : [],
-  };
-  const events = {
-    byEvent: Array.isArray(raw?.events?.byEvent) ? raw.events.byEvent : [],
-    byBrand: Array.isArray(raw?.events?.byBrand) ? raw.events.byBrand : [],
-    last: Array.isArray(raw?.events?.last) ? raw.events.last : [],
-  };
-  return { clicks, events };
-}
-
-function mapFromRows(rows, keyField, valField){
-  const m = {};
-  for(const r of (rows || [])){
-    const k = String(r?.[keyField] ?? r?.k ?? "").trim() || "?";
-    const v = Number(r?.[valField] ?? r?.n ?? 0);
-    m[k] = (m[k] || 0) + v;
-  }
-  return m;
-}
-
-function renderAgeGate(eventsByEvent){
-  const aperoAccept = eventsByEvent["apero_nuit.age.accept"] || 0;
-  const aperoRefuse = eventsByEvent["apero_nuit.age.refuse"] || 0;
-  const catAccept = eventsByEvent["apero_catalan.age.accept"] || 0;
-  const catRefuse = eventsByEvent["apero_catalan.age.refuse"] || 0;
-
-  setText("ageAperoAccept", formatInt(aperoAccept));
-  setText("ageAperoRefuse", formatInt(aperoRefuse));
-  setText("ageCatalanAccept", formatInt(catAccept));
-  setText("ageCatalanRefuse", formatInt(catRefuse));
-}
-
-function renderLast50Merged(clickLast, eventLast){
-  const merged = [];
-
-  for(const r of (clickLast || [])){
-    merged.push({
-      ts: toMsFromSqliteDatetime(r.created_at),
-      date: r.created_at || "",
-      type: "click",
-      key: r.campaign || "?",
-      src: r.source || "direct",
-      country: r.country || "?",
-      device: r.device || "?",
-      os: r.os || "?",
-      browser: r.browser || "?",
-      target: `${r.domain || ""}${r.path || ""}`.replace(/^\s+|\s+$/g,"")
-    });
-  }
-
-  for(const r of (eventLast || [])){
-    merged.push({
-      ts: Number(r.ts || 0),
-      date: r.ts ? new Date(Number(r.ts)).toLocaleString("fr-FR") : "",
-      type: "event",
-      key: r.event_key || "?",
-      src: r.src || "direct",
-      country: r.country || "?",
-      device: r.device || "?",
-      os: r.os || "?",
-      browser: r.browser || "?",
-      target: ""
-    });
-  }
-
-  merged.sort((a,b)=> (b.ts||0) - (a.ts||0));
-  const top50 = merged.slice(0, 50);
-
-  // résumé OS / navigateur sur les 50 derniers
-  const osMap = {};
-  const brMap = {};
-  for(const it of top50){
-    const os = String(it.os || "?");
-    const br = String(it.browser || "?");
-    osMap[os] = (osMap[os]||0) + 1;
-    brMap[br] = (brMap[br]||0) + 1;
-  }
-  setText("last50OS", pickTopText(osMap, 5));
-  setText("last50Browser", pickTopText(brMap, 5));
-
-  const tbody = $("tbodyLast50");
-  if(!tbody) return;
-  tbody.innerHTML = top50.map(it => `
+  tbody.innerHTML = all.map(x => `
     <tr>
-      <td>${escHtml(it.date)}</td>
-      <td>${escHtml(it.type)}</td>
-      <td>${escHtml(it.key)}</td>
-      <td>${escHtml(it.src)}</td>
-      <td>${escHtml(it.country)}</td>
-      <td>${escHtml(it.device)}</td>
-      <td>${escHtml(it.os)}</td>
-      <td>${escHtml(it.browser)}</td>
-      <td>${escHtml(it.target)}</td>
+      <td>${escapeHtml(fmtDateShort(x.date))}</td>
+      <td>${escapeHtml(x.kind)}</td>
+      <td>${escapeHtml(x.name)}</td>
+      <td class="hideSm">${escapeHtml(x.src)}</td>
+      <td class="hideSm">${escapeHtml(x.os)}</td>
+      <td class="hideSm">${escapeHtml(x.browser)}</td>
     </tr>
   `).join("");
 }
 
-function renderBarsFromData(clickByCampaign, eventsByBrand){
-  // Campagnes (clicks)
-  const cMap = mapFromRows(clickByCampaign, "campaign", "n");
-  const campaignItems = [
-    { label: "Apéro de Nuit (apero)", value: cMap.apero || 0, color: COLORS.apero },
-    { label: "Apéro Catalan (catalan)", value: cMap.catalan || 0, color: COLORS.catalan },
-    { label: "Hibair Drink (jeux)", value: cMap.jeux || cMap.game || 0, color: COLORS.jeux },
-    { label: "Roue de la fortune (chance)", value: cMap.chance || 0, color: COLORS.chance },
-  ].filter(x => x.value > 0);
+function computeProjects(byCampaign, byEvent) {
+  const c = campaignMap(byCampaign);
+  const e = eventMap(byEvent);
 
-  // Marques (events)
-  const bMap = mapFromRows(eventsByBrand, "k", "n");
-  const brandItems = [
-    { label: "Apéro Catalan", value: bMap.apero_catalan || 0, color: COLORS.catalan },
-    { label: "Apéro de Nuit 66", value: bMap.apero_nuit || 0, color: COLORS.apero },
-    { label: "Hibair Drink", value: bMap.hibair || 0, color: COLORS.hibair },
-    { label: "Roue de la fortune", value: bMap.wheel || 0, color: COLORS.wheel },
-  ].filter(x => x.value > 0);
+  // Hibair Drink = "jeux" campaign (Hibair/Game) — c'est ton usage actuel via /go/jeux
+  const hibair = Number(c.jeux ?? c.game ?? 0);
 
-  renderBars("barsCampaign", campaignItems);
-  renderBars("barsBrand", brandItems);
-}
-
-async function refresh(){
-  try{
-    const raw = await fetchJson(API_STATS);
-    const { clicks, events } = normalizeStats(raw);
-
-    // liens
-    setText("trackingLinks", buildTrackingText());
-
-    // age gate
-    const evMap = mapFromRows(events.byEvent, "k", "n");
-    renderAgeGate(evMap);
-
-    // barres
-    renderBarsFromData(clicks.byCampaign, events.byBrand);
-
-    // derniers 50 (fusion)
-    renderLast50Merged(clicks.last, events.last);
-
-  }catch(e){
-    console.error(e);
-    toast("Erreur API / D1 (voir console) ❌");
-    // même si erreur, afficher au moins les liens
-    setText("trackingLinks", buildTrackingText());
+  // Apéro nuit = campaign "apero" (+ events apero_nuit.* si présents)
+  let nuit = Number(c.apero ?? 0);
+  for (const [k,v] of Object.entries(e)) {
+    if (k.startsWith("apero_nuit.")) nuit += Number(v || 0);
   }
+
+  // Catalan = campaign "catalan" (+ events apero_catalan.* si présents)
+  let catalan = Number(c.catalan ?? 0);
+  for (const [k,v] of Object.entries(e)) {
+    if (k.startsWith("apero_catalan.")) catalan += Number(v || 0);
+  }
+
+  // Roue = event wheel.* (+ campaign chance si tu l'utilises pour la roue)
+  let wheel = 0;
+  for (const [k,v] of Object.entries(e)) {
+    if (k.startsWith("wheel.")) wheel += Number(v || 0);
+  }
+  wheel += Number(c.chance ?? 0);
+
+  // expose for index.html mini viz
+  window.__ADN66_PROJECTS__ = { nuit, catalan, hibair, wheel };
 }
 
-/* ===== PWA install (conserve l’existant, simplifié) ===== */
-let deferredPrompt = null;
-
-function setupPWAInstall(){
+function setupPWAInstall() {
+  let deferredPrompt = null;
   const btn = $("btnInstall");
-  const hint = $("installHint");
-  if(!btn) return;
-
-  btn.disabled = true;
+  if (!btn) return;
 
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    btn.disabled = false;
-    if(hint) hint.textContent = "Disponible sur cet appareil.";
+    btn.hidden = false;
   });
 
   btn.addEventListener("click", async () => {
-    if(!deferredPrompt) return;
+    if (!deferredPrompt) return;
     deferredPrompt.prompt();
-    try{ await deferredPrompt.userChoice; }catch{}
+    await deferredPrompt.userChoice;
     deferredPrompt = null;
-    btn.disabled = true;
+    btn.hidden = true;
   });
 
-  // iOS hint
-  const ua = navigator.userAgent || "";
-  const isIOS = /iPhone|iPad|iPod/i.test(ua);
-  if(isIOS && hint) hint.textContent = "iOS : Partager → Sur l’écran d’accueil.";
+  if ("serviceWorker" in navigator) {
+    // base uses service-worker.js as main SW
+    navigator.serviceWorker.register("./service-worker.js").catch(()=>{});
+  }
 }
 
-/* ===== Auto refresh ===== */
-function setupAuto(){
+async function refresh() {
+  setStatus("Chargement…", "warn");
+  try {
+    try { await fetch(API_HEALTH, { cache:"no-store" }); } catch {}
+
+    const raw = await fetchJson(API_STATS);
+    if (raw && raw.ok === false) throw new Error(raw.error || "API ok=false");
+
+    const s = normalizeStats(raw);
+
+    // Rendu tables demandées
+    renderRows("tbodyDevice", s.byDevice, r => r.device, r => r.n);
+    renderRows("tbodyOS", s.byOS, r => r.os, r => r.n);
+    renderRows("tbodyBrowser", s.byBrowser, r => r.browser, r => r.n);
+
+    // Projects totals (for bars)
+    computeProjects(s.byCampaign, s.events.byEvent);
+
+    // Last 50
+    renderLast50(s.lastClicks, s.events.last);
+
+    setStatus("OK ✅", "good");
+  } catch (err) {
+    console.error(err);
+    setStatus(`Erreur: ${err.message}`, "bad");
+  }
+}
+
+function setupAuto() {
   const LS = "adn66_stat_auto";
   const toggle = $("autoToggle");
-  if(!toggle) return;
+  if (!toggle) return;
 
   let on = localStorage.getItem(LS) === "1";
   toggle.checked = on;
 
   let timer = null;
   const arm = () => {
-    if(timer) clearInterval(timer);
-    if(!toggle.checked) return;
-    timer = setInterval(refresh, 15000);
+    if (timer) clearInterval(timer);
+    if (toggle.checked) timer = setInterval(refresh, 30000);
   };
 
-  toggle.addEventListener("change", ()=>{
-    localStorage.setItem(LS, toggle.checked ? "1" : "0");
+  toggle.addEventListener("change", () => {
+    localStorage.setItem(LS, toggle.checked ? "1":"0");
     arm();
   });
 
   arm();
 }
 
-function hardReload(){
-  // SW: tente d’ignorer cache
-  try { if (navigator.serviceWorker?.controller) navigator.serviceWorker.controller.postMessage({type:"SKIP_WAITING"}); } catch {}
+async function hardReload() {
+  try{
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  }catch{}
   location.reload(true);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   setText("apiHost", "stats.aperos.net");
-  if ($("btnRefresh")) $("btnRefresh").addEventListener("click", refresh);
-  if ($("btnCopyLinks")) $("btnCopyLinks").addEventListener("click", copyLinks);
-  if ($("btnHardReload")) $("btnHardReload").addEventListener("click", hardReload);
+  renderLinksBox();
 
-  setText("trackingLinks", buildTrackingText());
+  const br = $("btnRefresh");
+  if (br) br.addEventListener("click", refresh);
+
+  const bc = $("btnCopyLinks");
+  if (bc) bc.addEventListener("click", copyLinks);
+
+  const bh = $("btnHardReload");
+  if (bh) bh.addEventListener("click", hardReload);
+
   setupPWAInstall();
   setupAuto();
   refresh();
