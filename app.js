@@ -84,25 +84,10 @@ function paletteForContainer(containerId){
 function barRow(label, n, pct, palette){
   const pctTxt = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
   const w = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
-
   const grad = `linear-gradient(90deg, ${palette.c1}, ${palette.c2})`;
 
-  const rowStyle = [
-    "display:flex",
-    "flex-direction:column",
-    "align-items:stretch",
-    "gap:8px",
-    "margin:8px 0"
-  ].join(";");
-
-  const topStyle = [
-    "display:flex",
-    "align-items:center",
-    "justify-content:space-between",
-    "gap:10px"
-  ].join(";");
-
   const trackStyle = [
+    "margin-top:10px",
     "height:16px",
     "border-radius:999px",
     "border:1px solid rgba(255,255,255,.28)",
@@ -124,10 +109,10 @@ function barRow(label, n, pct, palette){
   ].join(";");
 
   return `
-    <div class="barRow" style="${rowStyle}">
-      <div class="barTop" style="${topStyle}">
+    <div class="barRow">
+      <div class="barTop">
         <div class="left">${esc(label)}</div>
-        <div class="right"><span>${fmt(n)}</span><span style="opacity:.85">•</span><span>${pctTxt}</span></div>
+        <div class="right"><span>${fmt(n)}</span><span style="opacity:.8">•</span><span>${pctTxt}</span></div>
       </div>
       <div style="${trackStyle}">
         <div style="${fillStyle}"></div>
@@ -150,6 +135,37 @@ function renderCompare(containerId, items){
     return barRow(x.label, x.n, pct, pal);
   }).join("");
 }
+
+function renderBrandCompare(){
+  // Prefer API-provided fields if present; else compute from known blocks (nuit + catalan totals)
+  const el = $("cmpBrand");
+  if(!el) return;
+
+  // Try global state if present
+  const nuitTotal = (state?.counts?.nuit_total ?? state?.counts?.apero_nuit_total ?? null);
+  const catTotal  = (state?.counts?.catalan_total ?? state?.counts?.apero_catalan_total ?? null);
+
+  // If API doesn't expose totals, compute from sections we already render
+  const computedNuit = typeof state?.computed?.nuitTotal === "number" ? state.computed.nuitTotal : null;
+  const computedCat  = typeof state?.computed?.catalanTotal === "number" ? state.computed.catalanTotal : null;
+
+  const nNuit = Number(nuitTotal ?? computedNuit ?? 0);
+  const nCat  = Number(catTotal  ?? computedCat  ?? 0);
+  const total = (nNuit + nCat) || 0;
+
+  if(!total){
+    el.innerHTML = `<div style="opacity:.6">—</div>`;
+    return;
+  }
+
+  const items = [
+    { label:"Apéro de Nuit 66", n:nNuit, palette:{c1:"rgba(26,167,255,.95)", c2:"rgba(0,120,255,.85)"} },
+    { label:"Apéro Catalan",   n:nCat,  palette:{c1:"rgba(255,204,0,.95)", c2:"rgba(255,145,0,.85)"} },
+  ];
+
+  el.innerHTML = items.map(x => barRow(x.label, x.n, (x.n/total*100), x.palette)).join("");
+}
+
 
 function parseDateAny(v){
   const s = String(v ?? "").trim();
@@ -229,17 +245,7 @@ function buildComparisons(s){
   const catAgeOk = Number(E["apero_catalan.age.accept"] ?? 0);
   const catAgeNo = Number(E["apero_catalan.age.refuse"] ?? 0);
 
-  
-  // TOTAL EVENTS (brand) — includes main tracked actions + age + origins (+ catalan /go as campaign)
-  const catGo = Number(C["catalan"] ?? 0);
-  const totalNuit = nuitJeux + nuitInstall + nuitCall + nuitAgeOk + nuitAgeNo + nuitFb + nuitGmb;
-  const totalCat = catInstall + catCall + catAgeOk + catAgeNo + catGo;
-
-  const brandItems = [
-    { label: "Apéro de Nuit 66", n: totalNuit },
-    { label: "Apéro Catalan", n: totalCat },
-  ];
-// Catalan source split is /go links; without API bySource, we can't split reliably.
+  // Catalan source split is /go links; without API bySource, we can't split reliably.
   // We display an informative message in UI (handled below).
 
   // Gamification
@@ -315,8 +321,7 @@ async function refresh(){
 
     const cmp = buildComparisons(s);
 
-      renderCompare("brandCompare", brandItems);
-  renderCompare("nuitIntent", cmp.nuitIntent);
+    renderCompare("nuitIntent", cmp.nuitIntent);
     renderCompare("nuitAge", cmp.nuitAge);
     renderCompare("nuitSource", cmp.nuitSource);
 

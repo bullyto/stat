@@ -177,7 +177,13 @@
     }
     .modalTitle{ font-weight: 950; text-transform: uppercase; letter-spacing:.6px; font-size: 12px; color: rgba(231,255,255,.86); }
     .modalBody{ padding: 10px 14px 14px; max-height: 72vh; overflow:auto; }
-  </style>
+  
+    /* ensure bar rows are compact and bars visible */
+    .barRow{ padding:10px 12px; border-radius:16px; }
+    .barTop{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .barTop .left{ font-weight:700; }
+    .barTop .right{ display:flex; align-items:center; gap:10px; font-weight:700; opacity:.95; }
+</style>
 </head>
 
 <body>
@@ -229,22 +235,7 @@
       </div>
     </div>
 
-    
-    <div class="secLabel">COMPARATIF <span class="muted">Nuit vs Catalan</span></div>
-    <div class="card">
-      <div class="cardHead">
-        <div class="dot muted"></div>
-        <div class="titles">
-          <div class="title">TOTAL EVENTS</div>
-          <div class="sub">Apéro de Nuit 66 / Apéro Catalan</div>
-        </div>
-        <div class="pill">events.byBrand</div>
-      </div>
-      <div class="cardBody">
-        <div class="list" id="brandCompare"></div>
-      </div>
-    </div>
-<div class="secLabel">APEROS.NET <small>Apéro de Nuit 66 • Bleu</small></div>
+    <div class="secLabel">APEROS.NET <small>Apéro de Nuit 66 • Bleu</small></div>
 
     <div class="card b-blue">
       <div class="cardHead">
