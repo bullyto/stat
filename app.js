@@ -85,20 +85,18 @@ function barRow(label, n, pct, palette){
   const pctTxt = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
   const w = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
 
-  // Strong gradient + glow (palette-coded)
   const grad = `linear-gradient(90deg, ${palette.c1}, ${palette.c2})`;
 
-  // IMPORTANT: no class names on the bar elements to avoid any CSS overriding them
   const trackStyle = [
     "margin-top:8px",
     "height:16px",
     "border-radius:999px",
-    "border:1px solid rgba(255,255,255,.28)",
+    "border:1px solid rgba(255,255,255,.30)",
     "background:rgba(255,255,255,.12)",
     "overflow:hidden",
     "position:relative",
     "z-index:2",
-    "box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(0,0,0,.35)"
+    "box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1px 0 rgba(0,0,0,.40)"
   ].join(";");
 
   const fillStyle = [
@@ -123,6 +121,7 @@ function barRow(label, n, pct, palette){
     </div>
   `;
 }
+
 function renderCompare(containerId, items){
   const el = $(containerId);
   if(!el) return;
@@ -316,15 +315,7 @@ async function refresh(){
 }
 
 
-    catch(_){ setStatus("Copie impossible ❌"); }
-    document.body.removeChild(ta);
-  }
-}
-
-
-
 function getTrackingTextLabeled(){
-  // Text copied to clipboard (with meaning)
   return [
     "APEROS.NET — Apéro de Nuit 66",
     "• Bouton Jeux:",
@@ -372,9 +363,10 @@ function getTrackingTextLabeled(){
     "",
     "ROUE DE LA FORTUNE",
     "• SMS:",
-    "  https://stats.aperos.net/e/wheel.sms.click?to=https%3A%2F%2Fchance.aperos.net&src=sms",
-  ].join("\\n");
+    "  https://stats.aperos.net/e/wheel.sms.click?to=https%3A%2F%2Fchance.aperos.net&src=sms"
+  ].join("\n");
 }
+
 async function copyTrackings(){
   const text = getTrackingTextLabeled();
   try{
@@ -388,6 +380,11 @@ async function copyTrackings(){
     document.body.appendChild(ta);
     ta.select();
     try{ document.execCommand("copy"); setStatus("Trackings copiés ✅"); }
+    catch(_){ setStatus("Copie impossible ❌"); }
+    document.body.removeChild(ta);
+  }
+}
+
     catch(_){ setStatus("Copie impossible ❌"); }
     document.body.removeChild(ta);
   }
