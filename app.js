@@ -149,20 +149,6 @@ function renderRows(tbodyId, rows, kGetter, vGetter) {
 }
 
 // NEW: label “humain” pour tes event_key
-const ALLOWED_EVENT_KEYS = new Set([
-  "apero_nuit.app.click",
-  "apero_nuit.call",
-  "apero_nuit.qr.click",
-  "apero_nuit.facebook.click",
-  "apero_nuit.site.click",
-  "wheel.sms.click",
-  "apero_catalan.call",
-  "apero_nuit.age.accept",
-  "apero_nuit.age.refuse",
-  "apero_catalan.age.accept",
-  "apero_catalan.age.refuse",
-]);
-
 function eventLabel(key) {
   const k = String(key || "").trim();
 
@@ -173,6 +159,14 @@ function eventLabel(key) {
     "apero_nuit.sms.click": "Apéro de Nuit 66 — SMS",
     "apero_nuit.qr.click": "Apéro de Nuit 66 — QR",
     "apero_nuit.app.click": "Apéro de Nuit 66 — Application",
+
+    // Apéro Catalan (canaux)
+    "apero_catalan.site.click": "Apéro Catalan — Site",
+    "apero_catalan.facebook.click": "Apéro Catalan — Facebook",
+    "apero_catalan.sms.click": "Apéro Catalan — SMS",
+    "apero_catalan.qr.click": "Apéro Catalan — QR",
+    "apero_catalan.app.click": "Apéro Catalan — Application",
+
 
     // Hibair
     "hibair.facebook.click": "Hibair Drink — Facebook",
@@ -211,81 +205,74 @@ function fillKPIs({ total, today, byCampaign, events }) {
 }
 
 function fillCampaigns(byCampaign) {
+  const dest = defaultDestinations();
   const map = {};
   for (const r of (byCampaign || [])) {
     const k = String(r.campaign ?? "").toLowerCase();
     map[k] = Number(r.n ?? 0);
   }
-
-  // ✅ On garde uniquement ce qui correspond à ta liste officielle (trak.txt)
-  // apero / catalan / jeux
   setText("cApero", formatInt(map.apero ?? 0));
   setText("cCatalan", formatInt(map.catalan ?? 0));
+  setText("cChance", formatInt(map.chance ?? 0));
   setText("cJeux", formatInt(map.jeux ?? map.game ?? 0));
 
   const tbody = $("tbodyCampaign");
   if (!tbody) return;
 
-  const rows = ["apero","catalan","jeux"]
-    .map(k => ({ key:k, clicks:Number(map[k] ?? 0) }))
+  const keys = ["apero","catalan","chance","jeux"];
+  const rows = keys
+    .map(k => ({ key:k, clicks:Number(map[k] ?? 0), to:dest[k] || "#" }))
     .sort((a,b)=>b.clicks-a.clicks);
 
-  tbody.innerHTML = rows.length ? rows.map(r => `
+  tbody.innerHTML = rows.map(r => `
     <tr>
       <td>${escapeHtml(campaignLabel(r.key))}</td>
       <td class="right">${formatInt(r.clicks)}</td>
+      <td class="hideSm"><a href="${escapeHtml(buildGoLink(r.key,"direct"))}" target="_blank" rel="noopener">Lien tracking</a></td>
+      <td class="hideSm"><a href="${escapeHtml(r.to)}" target="_blank" rel="noopener">Destination</a></td>
     </tr>
-  `).join("") : `<tr><td colspan="2" style="color:rgba(210,255,250,.65)">—</td></tr>`;
+  `).join("");
 }
 
-
-// NEW: remplir les tableaux events.*
-
-function formatDateTime(tsOrIso) {
-  // events.ts = ms epoch; clicks.created_at = ISO
-  const n = Number(tsOrIso);
-  if (Number.isFinite(n) && n > 0) {
-    try { return new Date(n).toLocaleString("fr-FR"); } catch {}
-  }
-  const s = String(tsOrIso || "").trim();
-  return s || "—";
-}
-
-function fillLastEvents(lastEvents) {
-  const tbody = $("tbodyLastEvents");
+function fillLastClicks(last) {
+  const tbody = $("tbodyLast");
   if (!tbody) return;
-
-  if (!Array.isArray(lastEvents) || !lastEvents.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color:rgba(210,255,250,.65)">—</td></tr>`;
+  if (!Array.isArray(last) || !last.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:rgba(210,255,250,.65)">—</td></tr>`;
     return;
   }
-
-  tbody.innerHTML = lastEvents.slice(0,50).map(r => {
-    const date = formatDateTime(r.ts ?? r.created_at ?? "");
-    const evk = safeLabel(r.event_key ?? r.k ?? "");
-    const src = safeLabel(r.src ?? r.source ?? "direct");
+  tbody.innerHTML = last.slice(0,50).map(r => {
+    const date = safeLabel(r.created_at ?? r.date ?? "");
+    const camp = safeLabel(r.campaign ?? "");
+    const src = safeLabel(r.source ?? "");
+    const country = safeLabel(r.country ?? "");
+    const device = safeLabel(r.device ?? "");
     const os = safeLabel(r.os ?? "");
     const browser = safeLabel(r.browser ?? "");
-    const device = safeLabel(r.device ?? "");
     return `
       <tr>
         <td>${escapeHtml(date)}</td>
-        <td>${escapeHtml(eventLabel(evk))}</td>
+        <td>${escapeHtml(campaignLabel(String(camp).toLowerCase()))}</td>
         <td>${escapeHtml(src)}</td>
-        <td>${escapeHtml(device)}</td>
-        <td>${escapeHtml(os)}</td>
-        <td>${escapeHtml(browser)}</td>
+        <td>${escapeHtml(country)}</td>
+        <td class="hideSm">${escapeHtml(device)}</td>
+        <td class="hideSm">${escapeHtml(os)}</td>
+        <td class="hideSm">${escapeHtml(browser)}</td>
       </tr>
     `;
   }).join("");
 }
 
+// NEW: remplir les tableaux events.*
 function fillEventTables(events) {
   if (!events) return;
 
+  // 50 derniers events
+  fillLastEvents(events.last);
+
   // byEvent: {k,n}
   if (elExists("tbodyEvent")) {
-    const rows = (events.byEvent || []).filter(r => ALLOWED_EVENT_KEYS.has(String(r.k ?? r.event_key ?? r.key || '').trim()));
+    const rows = events.byEvent || [];
     const tbody = $("tbodyEvent");
     tbody.innerHTML = rows.length
       ? rows
@@ -299,13 +286,89 @@ function fillEventTables(events) {
   }
 
   // byBrand: {k,n}
-  renderRows("tbodyBrand", (events.byBrand||[]).filter(r => ["apero_nuit","apero_catalan","wheel"].includes(String(r.k||"").trim())), r => r.k, r => r.n);
+  renderRows("tbodyBrand", events.byBrand, r => r.k, r => r.n);
 
   // byChannel: {k,n} (inclut "(none)")
   renderRows("tbodyChannel", events.byChannel, r => r.k, r => r.n);
 
   // byAction: {k,n}
   renderRows("tbodyAction", events.byAction, r => r.k, r => r.n);
+}
+
+async function copyLinks() {
+  const lines = [
+    "LIENS TRACKING (Stats ADN66)",
+    "",
+    `Apéro direct : ${buildGoLink("apero", "direct")}`,
+    `Apéro QR : ${buildGoLink("apero", "qr")}`,
+    `Apéro Facebook : ${buildGoLink("apero", "facebook")}`,
+    `Apéro SMS : ${buildGoLink("apero", "sms")}`,
+    "",
+    `Catalan direct : ${buildGoLink("catalan", "direct")}`,
+    `Catalan QR : ${buildGoLink("catalan", "qr")}`,
+    `Catalan Facebook : ${buildGoLink("catalan", "facebook")}`,
+    `Catalan SMS : ${buildGoLink("catalan", "sms")}`,
+    "",
+    `Chance direct : ${buildGoLink("chance", "direct")}`,
+    `Chance QR : ${buildGoLink("chance", "qr")}`,
+    `Chance Facebook : ${buildGoLink("chance", "facebook")}`,
+    `Chance SMS : ${buildGoLink("chance", "sms")}`,
+    "",
+    `Jeux direct : ${buildGoLink("jeux", "direct")}`,
+    `Jeux QR : ${buildGoLink("jeux", "qr")}`,
+    `Jeux Facebook : ${buildGoLink("jeux", "facebook")}`,
+    `Jeux SMS : ${buildGoLink("jeux", "sms")}`,
+
+    "",
+    "— NOUVEAUX LIENS EVENTS (17 trackings) —",
+    `Apéro Nuit 66 — Site : ${buildEventLink("apero_nuit.site.click", "https://aperos.net", "site")}`,
+    `Apéro Nuit 66 — Facebook : ${buildEventLink("apero_nuit.facebook.click", "https://aperos.net", "facebook")}`,
+    `Apéro Nuit 66 — SMS : ${buildEventLink("apero_nuit.sms.click", "https://aperos.net", "sms")}`,
+    `Apéro Nuit 66 — QR : ${buildEventLink("apero_nuit.qr.click", "https://aperos.net", "qr")}`,
+    `Apéro Nuit 66 — App : ${buildEventLink("apero_nuit.app.click", "https://aperos.net", "app")}`,
+
+    `Apéro Catalan — Appeler : ${buildEventLink("apero_catalan.call", "tel:0652336461", "app")}`,
+    `Apéro Nuit 66 — Appeler : ${buildEventLink("apero_nuit.call", "tel:0652336461", "app")}`,
+
+    `Roue fortune — SMS : ${buildEventLink("wheel.sms.click", "https://chance.aperos.net", "sms")}`,
+  ];
+
+  const txt = lines.join("\n");
+  try {
+    await navigator.clipboard.writeText(txt);
+    setStatus("Liens copiés ✅", "good");
+  } catch {
+    setStatus("Copie bloquée (navigateur) — ouvre sur Chrome", "warn");
+  }
+
+function fillLastEvents(lastEvents) {
+  const tbody = $("tbodyLastEvents");
+  if (!tbody) return;
+  if (!Array.isArray(lastEvents) || !lastEvents.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:rgba(210,255,250,.65)">—</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lastEvents.slice(0,50).map(r => {
+    const ts = Number(r.ts ?? 0);
+    const date = ts ? new Date(ts).toLocaleString() : safeLabel(r.date ?? "");
+    const key = safeLabel(r.event_key ?? r.k ?? "");
+    const src = safeLabel(r.src ?? "");
+    const os = safeLabel(r.os ?? "");
+    const browser = safeLabel(r.browser ?? "");
+    const country = safeLabel(r.country ?? "");
+    return `
+      <tr>
+        <td>${escapeHtml(date)}</td>
+        <td>${escapeHtml(eventLabel(key))}</td>
+        <td>${escapeHtml(src)}</td>
+        <td>${escapeHtml(country)}</td>
+        <td class="hideSm">${escapeHtml(os)}</td>
+        <td class="hideSm">${escapeHtml(browser)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
 }
 
 function setupPWAInstall() {
@@ -367,7 +430,7 @@ async function refresh() {
     // Existing optional blocks
     renderRows("tbodySource", base.bySource, r => r.source, r => r.n);
     renderRows("tbodyHourly", base.hourly, r => r.hour ?? r.heure, r => r.n);
-    fillLastEvents(base.events?.last || []);
+    fillLastClicks(base.last);
 
     // NEW: events blocks
     fillEventTables(base.events);
@@ -419,6 +482,7 @@ async function hardReload() {
 document.addEventListener("DOMContentLoaded", () => {
   setText("apiHost", "stats.aperos.net");
   if (elExists("btnRefresh")) $("btnRefresh").addEventListener("click", refresh);
+  if (elExists("btnCopyLinks")) $("btnCopyLinks").addEventListener("click", copyLinks);
   if (elExists("btnHardReload")) $("btnHardReload").addEventListener("click", hardReload);
 
   setupPWAInstall();
