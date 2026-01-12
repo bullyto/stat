@@ -478,8 +478,8 @@ async function refresh(){
 
     renderCompare("catIntent", cmp.catIntent);
     renderCompare("catAge", cmp.catAge);
+    renderCompare("catSource", cmp.catSourceCompare);
 
-    setHTML("catSource", `<div style="opacity:.65">Comparatif Facebook/Google pour Catalan : OK quand tu auras des events dédiés (ex: apero_catalan.facebook.click / apero_catalan.site.click) ou un split /go par source exposé dans l’API.</div>`);
 
     renderCompare("gameCompare", cmp.gameCompare);
     renderCompare("devBars", (cmp.techOS && cmp.techOS.length) ? cmp.techOS : (cmp.techOSFallback||[]));
