@@ -428,13 +428,40 @@ async function copyTrackings(){
 }
 
 
+// Live polling (auto refresh)
+const LIVE_POLL_MS = 5000; // ADN66: toutes les 5 secondes
+let liveTimer = null;
+let liveInFlight = false;
+
+async function liveTick(){
+  if(liveInFlight) return;
+  liveInFlight = true;
+  try{
+    await refresh();
+  }catch(e){
+    try{
+      if(typeof setStatus === "function"){
+        setStatus("Erreur: " + (e && e.message ? e.message : String(e)), false);
+      }
+    }catch(_){}
+  }finally{
+    liveInFlight = false;
+  }
+}
+
 function startLivePolling(){
   stopLivePolling();
-  liveTimer = setInterval(() => { refresh();
-  startLivePolling(); }, LIVE_POLL_MS);
+  liveTimer = setInterval(liveTick, LIVE_POLL_MS);
+  // run immediately once
+  liveTick();
 }
+
 function stopLivePolling(){
-  if(liveTimer){ clearInterval(liveTimer); liveTimer = null; }
+  if(liveTimer){
+    clearInterval(liveTimer);
+    liveTimer = null;
+  }
+}
 }
 document.addEventListener("visibilitychange", () => {
   if(document.visibilityState === "visible"){
