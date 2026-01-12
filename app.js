@@ -11,36 +11,6 @@ function fmt(n){
   if(!Number.isFinite(x)) return "—";
   return new Intl.NumberFormat("fr-FR").format(x);
 }
-
-function parseUA(ua){
-  ua = String(ua||"");
-  const u = ua.toLowerCase();
-
-  // OS
-  let os = "";
-  if(u.includes("android")) os = "Android";
-  else if(u.includes("iphone") || u.includes("ipad") || u.includes("ipod")) os = "iOS";
-  else if(u.includes("windows")) os = "Windows";
-  else if(u.includes("mac os x") || u.includes("macintosh")) os = "macOS";
-  else if(u.includes("linux")) os = "Linux";
-  else os = "";
-
-  // Browser (rough but good enough)
-  let browser = "";
-  if(u.includes("edg/") || u.includes("edge")) browser = "Edge";
-  else if(u.includes("firefox/")) browser = "Firefox";
-  else if(u.includes("safari") && !u.includes("chrome") && !u.includes("chromium")) browser = "Safari";
-  else if(u.includes("chrome") || u.includes("chromium")) browser = "Chrome";
-  else browser = "";
-
-  // Device
-  let device = "";
-  if(u.includes("mobi") || u.includes("iphone") || u.includes("android")) device = "Mobile";
-  else device = "Desktop";
-
-  return { os, browser, device };
-}
-
 function esc(s){
   return String(s ?? "")
     .replaceAll("&","&amp;")
@@ -114,14 +84,11 @@ function paletteForContainer(containerId){
 function barRow(label, n, pct, palette){
   const pctTxt = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
   const w = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
-
   const grad = `linear-gradient(90deg, ${palette.c1}, ${palette.c2})`;
 
-  // shorter bar for readability
   const trackStyle = [
     "margin-top:10px",
-    "height:14px",
-    "width:78%",
+    "height:16px",
     "border-radius:999px",
     "border:1px solid rgba(255,255,255,.28)",
     "background:rgba(255,255,255,.12)",
@@ -138,14 +105,14 @@ function barRow(label, n, pct, palette){
     `background:${grad}`,
     "position:relative",
     "z-index:3",
-    "box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 0 18px rgba(90,255,235,.18)"
+    "box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 0 22px rgba(90,255,235,.22)"
   ].join(";");
 
   return `
     <div class="barRow">
       <div class="barTop">
         <div class="left">${esc(label)}</div>
-        <div class="right"><span>${fmt(n)}</span><span style="opacity:.75">&nbsp;•&nbsp;</span><span>${pctTxt}</span></div>
+        <div class="right"><span>${fmt(n)}</span><span style="opacity:.8">•</span><span>${pctTxt}</span></div>
       </div>
       <div style="${trackStyle}">
         <div style="${fillStyle}"></div>
@@ -223,59 +190,6 @@ function normalizeClick(r){
 function normalizeEvent(r){
   return { kind:"event", date: parseDateAny(r.ts ?? r.created_at ?? r.date), name:String(r.event_key ?? r.k ?? r.key ?? ""), src:String(r.src ?? r.source ?? ""), os:String(r.os ?? ""), browser:String(r.browser ?? "") };
 }
-
-function getRowTag(x){
-  const n = String(x?.name||"").toLowerCase();
-  const s = String(x?.src||"").toLowerCase();
-
-  // decide universe by event/campaign name
-  if(n.includes("apero_nuit") || s.includes("apero") || n === "apero"){
-    return { cls:"tagNuit", dot:"dotNuit" };
-  }
-  if(n.includes("apero_catalan") || s.includes("catalan") || n === "catalan"){
-    return { cls:"tagCatalan", dot:"dotCatalan" };
-  }
-  if(n.includes("wheel") || n.includes("roue") || s.includes("sms")){
-    return { cls:"tagWheel", dot:"dotWheel" };
-  }
-  if(n.includes("jeux") || n.includes("hibair")){
-    return { cls:"tagHibair", dot:"dotHibair" };
-  }
-  return { cls:"tagNeutral", dot:"dotNeutral" };
-}
-
-
-function buildOSCountsFromLast(lastClicks, lastEvents){
-  const clicks = (lastClicks||[]).map(normalizeClick);
-  const events = (lastEvents||[]).map(normalizeEvent);
-  const all = clicks.concat(events);
-  const map = new Map();
-  for(const x of all){
-    let os = String(x.os||"");
-    if(!os && x.ua){
-      os = parseUA(x.ua).os;
-    }
-    os = os || "Autre";
-    map.set(os, (map.get(os)||0) + 1);
-  }
-  // convert to array of {name, n}
-  return Array.from(map.entries()).map(([name,n])=>({name, n})).sort((a,b)=>b.n-a.n);
-}
-
-function renderTechOS(list){
-  const el = $("techOS");
-  if(!el) return;
-  const items = (list||[]).map(r=>({label:String(r.name ?? r.label ?? r.os ?? "Autre"), n:Number(r.n ?? r.count ?? 0)})).filter(x=>x.label);
-  const total = items.reduce((s,x)=>s+Number(x.n||0),0);
-  if(!total){
-    el.innerHTML = `<div style="opacity:.6">—</div>`;
-    return;
-  }
-  // neutral palette for tech
-  const pal = {c1:"rgba(220,240,245,.85)", c2:"rgba(160,190,200,.70)"};
-  el.innerHTML = items.slice(0,8).map(x=>barRow(x.label.toLowerCase(), x.n, (x.n/total*100), pal)).join("");
-}
-
 function renderLast50(lastClicks, lastEvents){
   const tb = $("tbodyLast50");
   if(!tb) return;
@@ -286,26 +200,16 @@ function renderLast50(lastClicks, lastEvents){
     tb.innerHTML = `<tr><td colspan="6" style="opacity:.6">—</td></tr>`;
     return;
   }
-  tb.innerHTML = all.map(x=>{
-    const tag = getRowTag(x);
-    const meta = [x.src, x.os, x.browser].filter(Boolean).join(" • ");
-    return `
-    <tr class="rowTag ${tag.cls}">
+  tb.innerHTML = all.map(x=>`
+    <tr>
       <td>${esc(fmtDate(x.date))}</td>
       <td>${esc(x.kind)}</td>
-      <td>
-        <div class="nameLine">
-          <span class="tagDot ${tag.dot}"></span>
-          <span>${esc(x.name)}</span>
-        </div>
-        <div class="metaSm">${esc(meta || "")}</div>
-      </td>
+      <td>${esc(x.name)}</td>
       <td class="hideSm">${esc(x.src || "")}</td>
       <td class="hideSm">${esc(x.os || "")}</td>
       <td class="hideSm">${esc(x.browser || "")}</td>
     </tr>
-  `;
-  }).join("");
+  `).join("");
 }
 
 function computeTodayFallback(s){
@@ -319,7 +223,7 @@ function computeTodayFallback(s){
   return count || NaN;
 }
 
-function buildComparisons(s, lastClicks, lastEvents){
+function buildComparisons(s){
   const E = getEventCountMap(s.byEvent);
   const C = getCampaignCountMap(s.byCampaign);
 
@@ -374,8 +278,7 @@ function buildComparisons(s, lastClicks, lastEvents){
       {label:"Hibair Drink", n:hibair},
       {label:"Roue de la fortune", n:wheel},
     ],
-    techOS: ((s.byOS||s.byOs||s.by_os||[])||[]).map(r=>({label:String(r.os??r.name??r.label??"?"), n:Number(r.n??r.count??0)})).slice(0,10),
-    techOSFallback: buildOSCountsFromLast(lastClicks, lastEvents),
+    techDevice: (s.byDevice||[]).map(r=>({label:String(r.device??"?"), n:Number(r.n??0)})).slice(0,10),
     techBrowser: (s.byBrowser||[]).map(r=>({label:String(r.browser??"?"), n:Number(r.n??0)})).slice(0,10),
   };
 }
@@ -403,6 +306,9 @@ function closeModal(){
 }
 
 async function refresh(){
+  if(inFlight) return;
+  inFlight = true;
+
   setStatus("Chargement…");
   try{
     try{ await fetch(API_HEALTH, {cache:"no-store"}); }catch{}
@@ -416,7 +322,7 @@ async function refresh(){
     const today = Number.isFinite(s.totals.todayEvents) ? s.totals.todayEvents : computeTodayFallback(s);
     setText("todayEvents", Number.isFinite(today) ? fmt(today) : "—");
 
-    const cmp = buildComparisons(s, s.lastClicks, s.lastEvents);
+    const cmp = buildComparisons(s);
 
     renderCompare("nuitIntent", cmp.nuitIntent);
     renderCompare("nuitAge", cmp.nuitAge);
@@ -425,10 +331,10 @@ async function refresh(){
     renderCompare("catIntent", cmp.catIntent);
     renderCompare("catAge", cmp.catAge);
 
-    setHTML("catSource", `<div style="opacity:.65">Comparatif Facebook/Google pour Catalan : OK quand tu auras des events dédiés (ex: apero_catalan.facebook.click / apero_catalan.site.click) ou un split /go par source exposé dans l’API.</div>`);
+    if(cmp.catSource){ renderCompare("catSource", cmp.catSource); } else { setHTML("catSource", `<div style="opacity:.6">—</div>`); }
 
     renderCompare("gameCompare", cmp.gameCompare);
-    renderCompare("devBars", (cmp.techOS && cmp.techOS.length) ? cmp.techOS : (cmp.techOSFallback||[]));
+    renderCompare("devBars", cmp.techDevice);
     renderCompare("browserBars", cmp.techBrowser);
 
     renderLast50(s.lastClicks, s.lastEvents);
@@ -437,6 +343,7 @@ async function refresh(){
   }catch(e){
     console.error(e);
     setStatus(`Erreur: ${e.message}`);
+    inFlight = false;
   }
 }
 
@@ -519,6 +426,25 @@ async function copyTrackings(){
     document.body.removeChild(ta);
   }
 }
+
+
+function startLivePolling(){
+  stopLivePolling();
+  liveTimer = setInterval(() => { refresh();
+  startLivePolling(); }, LIVE_POLL_MS);
+}
+function stopLivePolling(){
+  if(liveTimer){ clearInterval(liveTimer); liveTimer = null; }
+}
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState === "visible"){
+    refresh();
+    startLivePolling();
+  }else{
+    stopLivePolling();
+  }
+});
+
 
 document.addEventListener("DOMContentLoaded", () => {
   $("btnRefresh")?.addEventListener("click", refresh);
