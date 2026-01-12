@@ -1,5 +1,5 @@
 /* SW SAFE for ADN66 Stats (avoid stale JS/HTML issues) */
-const VERSION = "stats-v2";
+const VERSION = "stats-v3";
 const CACHE = `adn66-stats-${VERSION}`;
 const CORE = [
   "./",
