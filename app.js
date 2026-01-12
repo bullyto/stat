@@ -56,7 +56,16 @@ function setStatus(msg){
 }
 
 async function fetchJson(url){
-  const res = await fetch(url, { cache:"no-store" });
+  // Cache-buster to avoid Service Worker / intermediary caches returning stale JSON
+  try{
+    const u = new URL(url, location.href);
+    u.searchParams.set("_ts", Date.now().toString());
+    url = u.toString();
+  }catch(e){/* ignore */}
+  const res = await fetch(url, {
+    cache: "no-store",
+    headers: { "Cache-Control": "no-store" }
+  });
   const text = await res.text();
   if(!res.ok) throw new Error(`HTTP ${res.status} — ${(text||"").slice(0,160)}`);
   const t = text.trim();
@@ -121,7 +130,7 @@ function barRow(label, n, pct, palette){
   const trackStyle = [
     "margin-top:10px",
     "height:14px",
-    "width:78%",
+    "width:100%",
     "border-radius:999px",
     "border:1px solid rgba(255,255,255,.28)",
     "background:rgba(255,255,255,.12)",

@@ -1,5 +1,5 @@
 /* SW SAFE for ADN66 Stats (avoid stale JS/HTML issues) */
-const VERSION = "stats-v3";
+const VERSION = "stats-v2";
 const CACHE = `adn66-stats-${VERSION}`;
 const CORE = [
   "./",
@@ -27,6 +27,12 @@ self.addEventListener("activate", (event) => {
 
 function isCoreRequest(req){
   const url = new URL(req.url);
+
+  // Never cache the live stats API (avoid stale data in the PWA)
+  if (url.hostname === "stats.aperos.net" && url.pathname.startsWith("/api/")) {
+    event.respondWith(fetch(req, { cache: "no-store" }));
+    return;
+  }
   const p = url.pathname;
   return p.endsWith("/") || p.endsWith("/index.html") || p.endsWith("/app.js") || p.endsWith("/style.css") || p.endsWith("/manifest.json");
 }
