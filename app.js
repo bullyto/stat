@@ -245,6 +245,43 @@ function getRowTag(x){
 }
 
 
+function buildSourceCountsFromLast(lastClicks, campaign){
+  const m = new Map();
+  (lastClicks||[]).forEach(r=>{
+    const camp = r.campagne ?? r.campaign ?? r.camp ?? "";
+    if(campaign && camp !== campaign) return;
+    const src = (r.source ?? r.src ?? r.utm_source ?? "direct") || "direct";
+    m.set(src, (m.get(src)||0) + 1);
+  });
+  return m;
+}
+
+function buildSourceCountsFromApi(s, campaign){
+  // Prefer explicit byCampaignSource if the API provides it
+  const bcs = s.byCampaignSource || s.by_campaign_source || s.byCampaignSrc || null;
+  if(Array.isArray(bcs)){
+    const m = new Map();
+    bcs.forEach(r=>{
+      const camp = r.campagne ?? r.campaign ?? "";
+      if(campaign && camp !== campaign) return;
+      const src = (r.source ?? r.src ?? "direct") || "direct";
+      m.set(src, (m.get(src)||0) + Number(r.n??r.count??0));
+    });
+    if(m.size) return m;
+  }
+  // Fallback: global bySource (not campaign-specific)
+  const bs = s.bySource || s.by_source || null;
+  if(Array.isArray(bs)){
+    const m = new Map();
+    bs.forEach(r=>{
+      const src = (r.source ?? r.src ?? "direct") || "direct";
+      m.set(src, (m.get(src)||0) + Number(r.n??r.count??0));
+    });
+    if(m.size) return m;
+  }
+  return new Map();
+}
+
 function buildOSCountsFromLast(lastClicks, lastEvents){
   const clicks = (lastClicks||[]).map(normalizeClick);
   const events = (lastEvents||[]).map(normalizeEvent);
@@ -341,6 +378,17 @@ function buildComparisons(s, lastClicks, lastEvents){
   const catAgeOk = Number(E["apero_catalan.age.accept"] ?? 0);
   const catAgeNo = Number(E["apero_catalan.age.refuse"] ?? 0);
 
+// Source Catalan (Facebook vs Google My Business) via /go/catalan?src=...
+const catSrcMap = buildSourceCountsFromApi(s, "catalan");
+if(!catSrcMap.size){
+  // fallback based on last clicks (limited to 50)
+  const m2 = buildSourceCountsFromLast(lastClicks, "catalan");
+  m2.forEach((v,k)=>catSrcMap.set(k,v));
+}
+const catSrcFacebook = Number(catSrcMap.get("facebook") ?? 0);
+const catSrcDirect = Number(catSrcMap.get("direct") ?? catSrcMap.get("site") ?? 0);
+
+
   // Catalan source split is /go links; without API bySource, we can't split reliably.
   // We display an informative message in UI (handled below).
 
@@ -369,14 +417,20 @@ function buildComparisons(s, lastClicks, lastEvents){
     catAge: [
       {label:"Âge accepté", n:catAgeOk},
       {label:"Âge refusé", n:catAgeNo},
-    ],
+    ]
+,
+catSourceCompare: [
+  {label:"Facebook", n:catSrcFacebook},
+  {label:"Google My Business", n:catSrcDirect},
+]
+,
     gameCompare: [
       {label:"Hibair Drink", n:hibair},
       {label:"Roue de la fortune", n:wheel},
     ],
-    techOS: ((s.byOS||s.byOs||s.by_os||[])||[]).map(r=>({label:String(r.os??r.name??r.label??"?"), n:Number(r.n??r.count??0)})).slice(0,10),
+    techOS: (((s.byOS||s.byOs||s.by_os||[])||[])).map(r=>({label:String(r.os??r.name??r.label??"?"), n:Number(r.n??r.count??0)})).slice(0,10),
     techOSFallback: buildOSCountsFromLast(lastClicks, lastEvents),
-    techBrowser: (s.byBrowser||[]).map(r=>({label:String(r.browser??"?"), n:Number(r.n??0)})).slice(0,10),
+    techBrowser: ((s.byBrowser||s.by_browser||[])||[]).map(r=>({label:String(r.navigateur??r.browser??r.name??r.label??"?"), n:Number(r.n??r.count??0)})).slice(0,10),
   };
 }
 
